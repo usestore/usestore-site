@@ -105,13 +105,6 @@ export default function Header({ hideAuthLinks }: HeaderProps = {}) {
                   >
                     Wishlist
                   </a>
-                  <a
-                    href="/recently-viewed"
-                    className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Recently Viewed
-                  </a>
                   <div className="border-t border-input my-1"></div>
                   <button
                     onClick={async () => {

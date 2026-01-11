@@ -110,7 +110,6 @@ A modern, full-featured e-commerce website built with Astro, React, and Tailwind
 - **Checkout Flow**: Complete checkout process with order confirmation
 - **Order Management**: View order history and track orders
 - **Wishlist**: Save favorite products
-- **Recently Viewed**: Track recently viewed products
 - **Search**: Search products across the catalog
 
 ### User Authentication

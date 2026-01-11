@@ -1,0 +1,53 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="border-t">
+  <div class="container mx-auto px-4 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+      <div>
+        <h4 class="text-sm font-medium mb-4">Shop</h4>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="/products" class="hover:text-foreground">All Products</a></li>
+          <li><a href="/collections/new" class="hover:text-foreground">New Arrivals</a></li>
+          <li><a href="/collections/sale" class="hover:text-foreground">Sale</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-medium mb-4">Company</h4>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="/about" class="hover:text-foreground">About Us</a></li>
+          <li><a href="/contact" class="hover:text-foreground">Contact</a></li>
+          <li><a href="/careers" class="hover:text-foreground">Careers</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-medium mb-4">Support</h4>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="/faq" class="hover:text-foreground">FAQ</a></li>
+          <li><a href="/shipping" class="hover:text-foreground">Shipping</a></li>
+          <li><a href="/returns" class="hover:text-foreground">Returns</a></li>
+          <li><a href="/size-guide" class="hover:text-foreground">Size Guide</a></li>
+          <li><a href="/track-order" class="hover:text-foreground">Track Order</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-medium mb-4">Legal</h4>
+        <ul class="space-y-2 text-sm text-muted-foreground">
+          <li><a href="/privacy" class="hover:text-foreground">Privacy Policy</a></li>
+          <li><a href="/terms" class="hover:text-foreground">Terms of Service</a></li>
+          <li><a href="/cookies" class="hover:text-foreground">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t pt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <p class="text-sm text-muted-foreground">
+        &copy; {currentYear} usestore. All rights reserved.
+      </p>
+      <div class="flex items-center gap-4 text-sm text-muted-foreground">
+        <a href="/privacy" class="hover:text-foreground">Privacy</a>
+        <a href="/terms" class="hover:text-foreground">Terms</a>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,209 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="Returns & Exchanges - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-2xl font-medium">Returns & Exchanges</h1>
+      <p class="text-sm text-muted-foreground mt-2 mb-8">
+        We want you to love your purchase. If something isn't right, we're here to help.
+      </p>
+
+      <div class="space-y-8">
+        <!-- Return Policy Overview -->
+        <section class="p-6 bg-muted/30 border">
+          <h2 class="text-lg font-medium mb-6">Our Promise</h2>
+          <div class="grid sm:grid-cols-3 gap-6 text-center">
+            <div>
+              <div class="text-2xl font-medium">30</div>
+              <p class="text-sm text-muted-foreground">Days to return</p>
+            </div>
+            <div>
+              <div class="text-2xl font-medium">Free</div>
+              <p class="text-sm text-muted-foreground">Return shipping</p>
+            </div>
+            <div>
+              <div class="text-2xl font-medium">Easy</div>
+              <p class="text-sm text-muted-foreground">Online process</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Return Eligibility -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Return Eligibility</h2>
+          <p class="text-muted-foreground leading-relaxed mb-4">
+            Items are eligible for return if they meet the following criteria:
+          </p>
+          <ul class="space-y-3">
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 shrink-0 mt-0.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span class="text-muted-foreground">Returned within 30 days of delivery</span>
+            </li>
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 shrink-0 mt-0.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span class="text-muted-foreground">Unworn, unwashed, and in original condition</span>
+            </li>
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 shrink-0 mt-0.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span class="text-muted-foreground">All original tags attached</span>
+            </li>
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 shrink-0 mt-0.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span class="text-muted-foreground">In original packaging (if applicable)</span>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Non-Returnable Items -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Non-Returnable Items</h2>
+          <p class="text-muted-foreground leading-relaxed mb-4">
+            The following items cannot be returned:
+          </p>
+          <ul class="space-y-3">
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 shrink-0 mt-0.5">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+              <span class="text-muted-foreground">Final sale items (marked as such at time of purchase)</span>
+            </li>
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 shrink-0 mt-0.5">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+              <span class="text-muted-foreground">Underwear and swimwear (for hygiene reasons)</span>
+            </li>
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 shrink-0 mt-0.5">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+              <span class="text-muted-foreground">Gift cards</span>
+            </li>
+            <li class="flex gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 shrink-0 mt-0.5">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+              <span class="text-muted-foreground">Items with visible signs of wear or damage</span>
+            </li>
+          </ul>
+        </section>
+
+        <!-- How to Return -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">How to Start a Return</h2>
+          <div class="space-y-6">
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-foreground text-background flex items-center justify-center text-sm font-medium shrink-0">
+                1
+              </div>
+              <div>
+                <h3 class="font-medium">Log into your account</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  Go to your order history and find the order you want to return.
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-foreground text-background flex items-center justify-center text-sm font-medium shrink-0">
+                2
+              </div>
+              <div>
+                <h3 class="font-medium">Select items to return</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  Choose the items you'd like to return and select a reason.
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-foreground text-background flex items-center justify-center text-sm font-medium shrink-0">
+                3
+              </div>
+              <div>
+                <h3 class="font-medium">Print your label</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  A prepaid shipping label will be emailed to you. Print it and attach it to your package.
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-foreground text-background flex items-center justify-center text-sm font-medium shrink-0">
+                4
+              </div>
+              <div>
+                <h3 class="font-medium">Ship your return</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  Drop off your package at any carrier location. Keep your receipt as proof of shipment.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Exchanges -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Exchanges</h2>
+          <p class="text-muted-foreground leading-relaxed mb-4">
+            Need a different size or color? We make exchanges easy:
+          </p>
+          <ul class="list-disc pl-5 space-y-2 text-muted-foreground">
+            <li>During the return process, select "Exchange" instead of "Refund"</li>
+            <li>Choose your new size or color</li>
+            <li>If the item is in stock, we'll ship it as soon as we receive your return</li>
+            <li>If there's a price difference, we'll adjust accordingly</li>
+          </ul>
+        </section>
+
+        <!-- Refund Timeline -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Refund Timeline</h2>
+          <div class="space-y-4 text-muted-foreground leading-relaxed">
+            <p>
+              Once we receive your return, refunds are processed within 3-5 business days. The refund will be credited to your original payment method.
+            </p>
+            <p>
+              Please note that it may take an additional 5-10 business days for the refund to appear on your statement, depending on your financial institution.
+            </p>
+          </div>
+        </section>
+
+        <!-- International Returns -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">International Returns</h2>
+          <p class="text-muted-foreground leading-relaxed">
+            International customers are responsible for return shipping costs. We recommend using a tracked shipping service. Customs duties paid on the original order are non-refundable.
+          </p>
+        </section>
+
+        <!-- CTA -->
+        <div class="p-8 bg-muted/30 border text-center">
+          <h2 class="text-lg font-medium">Ready to start a return?</h2>
+          <p class="text-sm text-muted-foreground mt-2 mb-6">
+            Log into your account to initiate a return or contact us for help.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="/orders" class="py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+              View Orders
+            </a>
+            <a href="/contact" class="py-2.5 px-6 border border-input text-sm font-medium hover:bg-muted">
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,152 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { products } from "@/data/store";
+
+export const prerender = false;
+
+const query = Astro.url.searchParams.get("q") || "";
+const sortBy = Astro.url.searchParams.get("sort") || "relevance";
+
+let results = products;
+
+if (query) {
+  const searchTerms = query.toLowerCase().split(" ");
+  results = products.filter((product) => {
+    const searchText = `${product.name} ${product.description} ${product.category}`.toLowerCase();
+    return searchTerms.some((term) => searchText.includes(term));
+  });
+}
+
+// Sort results
+if (sortBy === "price-low") {
+  results = [...results].sort((a, b) => a.price - b.price);
+} else if (sortBy === "price-high") {
+  results = [...results].sort((a, b) => b.price - a.price);
+} else if (sortBy === "newest") {
+  results = [...results].sort((a, b) => b.id - a.id);
+}
+---
+
+<Layout title={query ? `Search: ${query} - usestore` : "Search - usestore"}>
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <!-- Search Header -->
+    <div class="max-w-2xl mx-auto mb-8">
+      <form action="/search" method="GET" class="relative">
+        <input
+          type="search"
+          name="q"
+          value={query}
+          placeholder="Search products..."
+          class="w-full py-3 px-4 pr-12 border border-input bg-background text-base placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          autofocus
+        />
+        <button
+          type="submit"
+          class="absolute right-0 top-0 h-full px-4 text-muted-foreground hover:text-foreground"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    {query ? (
+      <>
+        <!-- Results Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <p class="text-muted-foreground">
+            {results.length} {results.length === 1 ? "result" : "results"} for "<span class="text-foreground font-medium">{query}</span>"
+          </p>
+          <div class="flex items-center gap-2">
+            <label for="sort" class="text-sm text-muted-foreground">Sort by:</label>
+            <select
+              id="sort"
+              name="sort"
+              class="py-2 px-3 border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              onchange={`window.location.href='/search?q=${encodeURIComponent(query)}&sort=' + this.value`}
+            >
+              <option value="relevance" selected={sortBy === "relevance"}>Relevance</option>
+              <option value="newest" selected={sortBy === "newest"}>Newest</option>
+              <option value="price-low" selected={sortBy === "price-low"}>Price: Low to High</option>
+              <option value="price-high" selected={sortBy === "price-high"}>Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+
+        {results.length > 0 ? (
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+            {results.map((product) => (
+              <a href={`/products/${product.slug}`} class="group">
+                <div class="aspect-[3/4] bg-muted mb-3 relative overflow-hidden">
+                  <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                      <circle cx="9" cy="9" r="2"></circle>
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                    </svg>
+                  </div>
+                  {product.originalPrice && (
+                    <span class="absolute top-2 left-2 bg-foreground text-background text-xs px-2 py-1">
+                      Sale
+                    </span>
+                  )}
+                </div>
+                <h3 class="text-sm font-medium group-hover:underline">{product.name}</h3>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-sm">${product.price.toFixed(2)}</span>
+                  {product.originalPrice && (
+                    <span class="text-sm text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-16 max-w-sm mx-auto">
+            <div class="w-16 h-16 mx-auto mb-6 bg-muted flex items-center justify-center text-muted-foreground">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+            </div>
+            <h2 class="text-lg font-medium">No results found</h2>
+            <p class="text-sm text-muted-foreground mt-2 mb-8">
+              Try searching with different keywords or browse our categories.
+            </p>
+            <a href="/products" class="inline-block py-3 px-8 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+              Browse All Products
+            </a>
+          </div>
+        )}
+      </>
+    ) : (
+      <div class="text-center py-16 max-w-md mx-auto">
+        <div class="w-16 h-16 mx-auto mb-6 bg-muted flex items-center justify-center text-muted-foreground">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+        </div>
+        <h2 class="text-lg font-medium">Search our store</h2>
+        <p class="text-sm text-muted-foreground mt-2">
+          Enter a search term above to find products.
+        </p>
+        <div class="mt-8">
+          <p class="text-sm text-muted-foreground mb-3">Popular searches:</p>
+          <div class="flex flex-wrap justify-center gap-2">
+            {["T-Shirt", "Jacket", "Denim", "Sneakers", "Accessories"].map((term) => (
+              <a
+                href={`/search?q=${encodeURIComponent(term)}`}
+                class="py-1.5 px-3 border border-input text-sm hover:bg-muted"
+              >
+                {term}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</Layout>

@@ -1,0 +1,151 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="Shipping Information - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-2xl font-medium">Shipping Information</h1>
+      <p class="text-sm text-muted-foreground mt-2 mb-8">
+        Everything you need to know about our shipping options and delivery times.
+      </p>
+
+      <div class="space-y-8">
+        <!-- Domestic Shipping -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Domestic Shipping (United States)</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border">
+              <thead>
+                <tr class="border-b bg-muted/50">
+                  <th class="text-left p-4 font-medium">Shipping Method</th>
+                  <th class="text-left p-4 font-medium">Delivery Time</th>
+                  <th class="text-left p-4 font-medium">Cost</th>
+                </tr>
+              </thead>
+              <tbody class="text-muted-foreground">
+                <tr class="border-b">
+                  <td class="p-4">Standard Shipping</td>
+                  <td class="p-4">5-7 business days</td>
+                  <td class="p-4">$5.00 (Free over $100)</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-4">Express Shipping</td>
+                  <td class="p-4">2-3 business days</td>
+                  <td class="p-4">$12.00</td>
+                </tr>
+                <tr>
+                  <td class="p-4">Overnight Shipping</td>
+                  <td class="p-4">1 business day</td>
+                  <td class="p-4">$25.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-sm text-muted-foreground mt-4">
+            * Business days are Monday through Friday, excluding holidays. Orders placed after 2pm PST will be processed the next business day.
+          </p>
+        </section>
+
+        <!-- International Shipping -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">International Shipping</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border">
+              <thead>
+                <tr class="border-b bg-muted/50">
+                  <th class="text-left p-4 font-medium">Region</th>
+                  <th class="text-left p-4 font-medium">Delivery Time</th>
+                  <th class="text-left p-4 font-medium">Cost</th>
+                </tr>
+              </thead>
+              <tbody class="text-muted-foreground">
+                <tr class="border-b">
+                  <td class="p-4">Canada</td>
+                  <td class="p-4">7-10 business days</td>
+                  <td class="p-4">$15.00</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-4">Europe</td>
+                  <td class="p-4">10-14 business days</td>
+                  <td class="p-4">$20.00</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-4">Australia & New Zealand</td>
+                  <td class="p-4">12-16 business days</td>
+                  <td class="p-4">$25.00</td>
+                </tr>
+                <tr>
+                  <td class="p-4">Rest of World</td>
+                  <td class="p-4">14-21 business days</td>
+                  <td class="p-4">$30.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-sm text-muted-foreground mt-4">
+            * International customers may be subject to customs duties and taxes, which are the responsibility of the recipient.
+          </p>
+        </section>
+
+        <!-- Order Processing -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Order Processing</h2>
+          <div class="space-y-4 text-muted-foreground leading-relaxed">
+            <p>
+              Orders are typically processed within 1-2 business days. Once your order ships, you'll receive a confirmation email with tracking information.
+            </p>
+            <p>
+              During peak seasons (holidays, sales events), processing times may be slightly longer. We'll always keep you updated on your order status.
+            </p>
+          </div>
+        </section>
+
+        <!-- Tracking -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Tracking Your Order</h2>
+          <p class="text-muted-foreground leading-relaxed mb-4">
+            Once your order ships, you can track it in several ways:
+          </p>
+          <ul class="list-disc pl-5 space-y-2 text-muted-foreground">
+            <li>Click the tracking link in your shipping confirmation email</li>
+            <li>Log into your account and view your order details</li>
+            <li>Contact our support team with your order number</li>
+          </ul>
+        </section>
+
+        <!-- Shipping Restrictions -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Shipping Restrictions</h2>
+          <p class="text-muted-foreground leading-relaxed mb-4">
+            We currently ship to most countries worldwide. However, we are unable to ship to:
+          </p>
+          <ul class="list-disc pl-5 space-y-2 text-muted-foreground">
+            <li>P.O. Boxes (for express and overnight shipping)</li>
+            <li>APO/FPO addresses</li>
+            <li>Countries under trade restrictions</li>
+          </ul>
+        </section>
+
+        <!-- Lost or Damaged -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Lost or Damaged Packages</h2>
+          <p class="text-muted-foreground leading-relaxed">
+            If your package is lost or arrives damaged, please contact us within 7 days of the expected delivery date. We'll work with the carrier to locate your package or send a replacement.
+          </p>
+        </section>
+
+        <!-- CTA -->
+        <div class="p-8 bg-muted/30 border text-center">
+          <h2 class="text-lg font-medium">Have questions about shipping?</h2>
+          <p class="text-sm text-muted-foreground mt-2 mb-6">
+            Our support team is happy to help with any shipping inquiries.
+          </p>
+          <a href="/contact" class="inline-block py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+            Contact Us
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

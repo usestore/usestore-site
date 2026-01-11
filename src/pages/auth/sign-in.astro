@@ -1,0 +1,16 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import { SignInForm } from "@/components/auth/sign-in-form";
+
+export const prerender = false;
+
+const { user } = Astro.locals;
+
+if (user) {
+  return Astro.redirect("/");
+}
+---
+
+<AuthLayout title="Sign In">
+  <SignInForm client:load />
+</AuthLayout>

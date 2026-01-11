@@ -1,0 +1,26 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AccountSettings from "@/components/account/account-settings";
+
+export const prerender = false
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/sign-in");
+}
+---
+
+<Layout title="Account - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-2xl mx-auto">
+      <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-medium">Account Settings</h1>
+        <a href="/orders" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
+          View Orders
+        </a>
+      </div>
+      <AccountSettings user={user} client:load />
+    </div>
+  </div>
+</Layout>

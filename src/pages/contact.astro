@@ -1,0 +1,188 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="Contact - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-medium">Contact Us</h1>
+        <p class="text-muted-foreground mt-2">
+          We'd love to hear from you. Get in touch with our team.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-12">
+        <!-- Contact Form -->
+        <div>
+          <h2 class="text-lg font-medium mb-6">Send us a message</h2>
+          <form class="space-y-4">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label for="firstName" class="text-sm font-medium">First name</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  required
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label for="lastName" class="text-sm font-medium">Last name</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  required
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label for="email" class="text-sm font-medium">Email</label>
+              <input
+                id="email"
+                type="email"
+                required
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label for="subject" class="text-sm font-medium">Subject</label>
+              <select
+                id="subject"
+                required
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Select a topic</option>
+                <option value="order">Order Inquiry</option>
+                <option value="product">Product Question</option>
+                <option value="returns">Returns & Exchanges</option>
+                <option value="shipping">Shipping</option>
+                <option value="feedback">Feedback</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label for="orderNumber" class="text-sm font-medium">Order number (optional)</label>
+              <input
+                id="orderNumber"
+                type="text"
+                placeholder="ORD-XXXX-XXX"
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label for="message" class="text-sm font-medium">Message</label>
+              <textarea
+                id="message"
+                rows="5"
+                required
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+              ></textarea>
+            </div>
+            <button
+              type="submit"
+              class="w-full py-2.5 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+            >
+              Send Message
+            </button>
+          </form>
+        </div>
+
+        <!-- Contact Info -->
+        <div>
+          <h2 class="text-lg font-medium mb-6">Other ways to reach us</h2>
+
+          <div class="space-y-6">
+            <div class="flex gap-4">
+              <div class="w-10 h-10 bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-medium">Email</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  support@usestore.com
+                </p>
+                <p class="text-xs text-muted-foreground mt-1">
+                  We typically respond within 24 hours
+                </p>
+              </div>
+            </div>
+
+            <div class="flex gap-4">
+              <div class="w-10 h-10 bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-medium">Phone</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  1-800-USE-STORE
+                </p>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Mon-Fri: 9am-6pm PST
+                </p>
+              </div>
+            </div>
+
+            <div class="flex gap-4">
+              <div class="w-10 h-10 bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-medium">Live Chat</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  Chat with our support team
+                </p>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Available Mon-Fri: 9am-6pm PST
+                </p>
+              </div>
+            </div>
+
+            <div class="flex gap-4">
+              <div class="w-10 h-10 bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-medium">Headquarters</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  123 Market Street<br />
+                  San Francisco, CA 94105<br />
+                  United States
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 pt-8 border-t">
+            <h3 class="font-medium mb-6">Quick Links</h3>
+            <div class="flex flex-wrap gap-2">
+              <a href="/faq" class="py-1.5 px-3 border border-input text-sm hover:bg-muted">
+                FAQ
+              </a>
+              <a href="/shipping" class="py-1.5 px-3 border border-input text-sm hover:bg-muted">
+                Shipping Info
+              </a>
+              <a href="/returns" class="py-1.5 px-3 border border-input text-sm hover:bg-muted">
+                Returns
+              </a>
+              <a href="/size-guide" class="py-1.5 px-3 border border-input text-sm hover:bg-muted">
+                Size Guide
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

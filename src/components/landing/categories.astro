@@ -1,0 +1,24 @@
+---
+const categories = [
+  { name: "Tops", slug: "tops" },
+  { name: "Bottoms", slug: "bottoms" },
+  { name: "Outerwear", slug: "outerwear" },
+  { name: "Accessories", slug: "accessories" },
+];
+---
+
+<section class="border-b">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <h2 class="text-lg font-medium mb-6">Categories</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {categories.map((category) => (
+        <a
+          href={`/categories/${category.slug}`}
+          class="aspect-square bg-muted flex items-end p-4"
+        >
+          <span class="text-sm font-medium">{category.name}</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

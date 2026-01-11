@@ -1,0 +1,218 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { products } from "@/data/store";
+
+export const prerender = false;
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/sign-in");
+}
+
+// Mock cart items for demo
+const cartItems = [
+  { product: products[0], quantity: 2, size: "M", color: "White" },
+  { product: products[4], quantity: 1, size: "L", color: "Gray" },
+];
+
+const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+const shipping = subtotal >= 100 ? 0 : 10;
+const tax = subtotal * 0.08;
+const total = subtotal + shipping + tax;
+---
+
+<Layout title="Checkout - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <h1 class="text-2xl font-medium mb-8">Checkout</h1>
+
+    <div class="grid lg:grid-cols-12 gap-8 lg:gap-12">
+      <!-- Checkout Form -->
+      <div class="lg:col-span-7 xl:col-span-8 space-y-8">
+        <!-- Contact -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Contact</h2>
+          <div class="space-y-4">
+            {!user && (
+              <p class="text-sm text-muted-foreground">
+                Already have an account? <a href="/auth/sign-in" class="underline underline-offset-4 hover:text-foreground">Sign in</a>
+              </p>
+            )}
+            <div>
+              <label for="email" class="text-sm font-medium">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={user?.email || ""}
+                placeholder="you@example.com"
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Shipping Address -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Shipping Address</h2>
+          <div class="space-y-4">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label for="firstName" class="text-sm font-medium">First name</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label for="lastName" class="text-sm font-medium">Last name</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label for="address" class="text-sm font-medium">Address</label>
+              <input
+                id="address"
+                type="text"
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label for="apartment" class="text-sm font-medium">Apartment, suite, etc. (optional)</label>
+              <input
+                id="apartment"
+                type="text"
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label for="city" class="text-sm font-medium">City</label>
+                <input
+                  id="city"
+                  type="text"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label for="state" class="text-sm font-medium">State</label>
+                <input
+                  id="state"
+                  type="text"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label for="zip" class="text-sm font-medium">ZIP code</label>
+                <input
+                  id="zip"
+                  type="text"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label for="phone" class="text-sm font-medium">Phone</label>
+              <input
+                id="phone"
+                type="tel"
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Payment -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Payment</h2>
+          <div class="border p-4 space-y-4">
+            <div>
+              <label for="cardNumber" class="text-sm font-medium">Card number</label>
+              <input
+                id="cardNumber"
+                type="text"
+                placeholder="1234 5678 9012 3456"
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="expiry" class="text-sm font-medium">Expiry date</label>
+                <input
+                  id="expiry"
+                  type="text"
+                  placeholder="MM / YY"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label for="cvc" class="text-sm font-medium">CVC</label>
+                <input
+                  id="cvc"
+                  type="text"
+                  placeholder="123"
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <a href="/checkout/success" class="block w-full py-3 bg-primary text-primary-foreground text-sm font-medium text-center hover:bg-primary/90">
+          Place Order
+        </a>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="lg:col-span-5 xl:col-span-4">
+        <div class="border p-6 lg:sticky lg:top-20">
+          <h2 class="font-medium mb-8">Order Summary</h2>
+
+          <div class="space-y-4 mb-6">
+            {cartItems.map((item) => (
+              <div class="flex gap-4">
+                <div class="w-16 h-20 bg-muted shrink-0 flex items-center justify-center text-muted-foreground/30 relative">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                  </svg>
+                  <span class="absolute -top-2 -right-2 w-5 h-5 bg-muted-foreground text-background text-xs flex items-center justify-center rounded-full">{item.quantity}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium">{item.product.name}</p>
+                  <p class="text-xs text-muted-foreground mt-0.5">{item.size} / {item.color}</p>
+                </div>
+                <p class="text-sm">${(item.product.price * item.quantity).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div class="space-y-3 text-sm border-t pt-4">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Subtotal</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Shipping</span>
+              <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Tax</span>
+              <span>${tax.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between pt-4 mt-4 border-t font-medium">
+            <span>Total</span>
+            <span>${total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

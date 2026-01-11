@@ -1,0 +1,365 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getProductBySlug, getProductsByCategory, getReviewsByProductId, getAverageRating, type Product } from "@/data/store";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const product = getProductBySlug(slug!);
+
+if (!product) {
+  return Astro.redirect("/products");
+}
+
+const relatedProducts = getProductsByCategory(product.category)
+  .filter((p) => p.id !== product.id)
+  .slice(0, 4);
+
+const productReviews = getReviewsByProductId(product.id);
+const averageRating = getAverageRating(product.id);
+const totalReviews = productReviews.length;
+---
+
+<Layout title={`${product.name} - usestore`}>
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-muted-foreground mb-8">
+      <a href="/" class="hover:text-foreground">Home</a>
+      <span class="mx-2">/</span>
+      <a href="/products" class="hover:text-foreground">Products</a>
+      <span class="mx-2">/</span>
+      <span class="text-foreground">{product.name}</span>
+    </nav>
+
+    <!-- Product Detail -->
+    <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+      <!-- Product Image -->
+      <div class="aspect-[3/4] bg-muted relative">
+        <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+            <circle cx="9" cy="9" r="2"></circle>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+          </svg>
+        </div>
+        {product.originalPrice && (
+          <span class="absolute top-4 left-4 bg-foreground text-background text-sm px-3 py-1">
+            Sale
+          </span>
+        )}
+      </div>
+
+      <!-- Product Info -->
+      <div>
+        <h1 class="text-2xl font-medium">{product.name}</h1>
+
+        <div class="flex items-center gap-3 mt-2">
+          <p class="text-lg">${product.price.toFixed(2)}</p>
+          {product.originalPrice && (
+            <p class="text-lg text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</p>
+          )}
+        </div>
+
+        <p class="text-muted-foreground mt-6 leading-relaxed">
+          {product.description}
+        </p>
+
+        <!-- Colors -->
+        {product.colors && product.colors.length > 0 && (
+          <div class="mt-6">
+            <h3 class="text-sm font-medium mb-2">Color</h3>
+            <div class="flex gap-2">
+              {product.colors.map((color, index) => (
+                <button
+                  class={`inline-flex items-center justify-center w-9 h-9 border-2 ${index === 0 ? 'border-foreground' : 'border-muted hover:border-foreground'}`}
+                  style={`background-color: ${color.value}`}
+                  title={color.name}
+                >
+                  <span class="sr-only">{color.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Sizes -->
+        {product.sizes && product.sizes.length > 0 && (
+          <div class="mt-6">
+            <h3 class="text-sm font-medium mb-2">Size</h3>
+            <div class="flex flex-wrap gap-2">
+              {product.sizes.map((size, index) => (
+                <button
+                  class={`inline-flex items-center justify-center py-2.5 px-4 border text-sm ${index === 0 ? 'border-foreground bg-foreground text-background' : 'border-input hover:border-foreground'}`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Add to Cart -->
+        <div class="mt-8 flex flex-col gap-3">
+          <button class="w-full py-3 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+            Add to Cart
+          </button>
+          <button class="w-full py-3 border border-input text-sm font-medium hover:bg-muted">
+            Add to Wishlist
+          </button>
+        </div>
+
+        <!-- Product Details -->
+        <div class="mt-12 pt-8 border-t">
+          <h3 class="text-sm font-medium mb-6">Details</h3>
+          <ul class="text-sm text-muted-foreground space-y-2">
+            <li>Category: <a href={`/categories/${product.category}`} class="underline hover:text-foreground capitalize">{product.category}</a></li>
+            {product.collection && (
+              <li>Collection: <a href={`/collections/${product.collection}`} class="underline hover:text-foreground capitalize">{product.collection}</a></li>
+            )}
+            <li>{product.inStock ? "In stock" : "Out of stock"}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="mt-16 pt-12 border-t">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div>
+          <h2 class="text-lg font-medium mb-2">Customer Reviews</h2>
+          {totalReviews > 0 ? (
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg
+                    key={star}
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill={star <= Math.round(averageRating) ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class={star <= Math.round(averageRating) ? "text-foreground" : "text-muted-foreground"}
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                ))}
+              </div>
+              <span class="text-sm text-muted-foreground">
+                {averageRating.toFixed(1)} out of 5 ({totalReviews} {totalReviews === 1 ? "review" : "reviews"})
+              </span>
+            </div>
+          ) : (
+            <p class="text-sm text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+          )}
+        </div>
+      </div>
+
+      {totalReviews > 0 && (
+        <div class="space-y-6 mb-12">
+          {productReviews.map((review) => (
+            <div class="border-b pb-6 last:border-b-0 last:pb-0">
+              <div class="flex items-start justify-between gap-4 mb-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                    {review.userName.charAt(0)}
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <p class="text-sm font-medium">{review.userName}</p>
+                      {review.verified && (
+                        <span class="text-xs px-1.5 py-0.5 bg-green-500/10 text-green-600">Verified Purchase</span>
+                      )}
+                    </div>
+                    <div class="flex items-center gap-1 mt-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill={star <= review.rating ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class={star <= review.rating ? "text-foreground" : "text-muted-foreground"}
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p class="text-xs text-muted-foreground shrink-0">
+                  {new Date(review.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              </div>
+              {review.title && (
+                <h4 class="text-sm font-medium mb-1 mt-3">{review.title}</h4>
+              )}
+              <p class="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <!-- Review Form -->
+      <div class="border p-6">
+        <h3 class="text-sm font-medium mb-4">Write a Review</h3>
+        <form class="space-y-4">
+          <div>
+            <label for="rating" class="text-sm font-medium mb-2 block">Rating</label>
+            <div class="flex gap-1" id="rating-stars">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  type="button"
+                  data-rating={star}
+                  class="rating-star text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </button>
+              ))}
+            </div>
+            <input type="hidden" id="rating" name="rating" value="0" />
+          </div>
+
+          <div>
+            <label for="review-title" class="text-sm font-medium mb-2 block">Title (optional)</label>
+            <input
+              type="text"
+              id="review-title"
+              name="title"
+              placeholder="Summarize your review"
+              class="w-full py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <label for="review-comment" class="text-sm font-medium mb-2 block">Your Review</label>
+            <textarea
+              id="review-comment"
+              name="comment"
+              rows="5"
+              placeholder="Share your experience with this product"
+              required
+              class="w-full py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-2.5 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+          >
+            Submit Review
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    {relatedProducts.length > 0 && (
+      <div class="mt-16 pt-12 border-t">
+        <h2 class="text-lg font-medium mb-6">You may also like</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+          {relatedProducts.map((related) => (
+            <a href={`/products/${related.slug}`} class="group">
+              <div class="aspect-[3/4] bg-muted mb-3">
+                <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                  </svg>
+                </div>
+              </div>
+              <h3 class="text-sm group-hover:underline">{related.name}</h3>
+              <p class="text-sm text-muted-foreground mt-1">${related.price.toFixed(2)}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<script is:inline>
+  // Star rating interaction
+  document.addEventListener("DOMContentLoaded", () => {
+    const stars = document.querySelectorAll(".rating-star");
+    const ratingInput = document.getElementById("rating");
+    let selectedRating = 0;
+
+    stars.forEach((star, index) => {
+      star.addEventListener("click", () => {
+        selectedRating = index + 1;
+        if (ratingInput) {
+          ratingInput.value = selectedRating.toString();
+        }
+        updateStars();
+      });
+
+      star.addEventListener("mouseenter", () => {
+        highlightStars(index + 1);
+      });
+    });
+
+    const container = document.getElementById("rating-stars");
+    if (container) {
+      container.addEventListener("mouseleave", () => {
+        updateStars();
+      });
+    }
+
+    function updateStars() {
+      stars.forEach((star, index) => {
+        const svg = star.querySelector("svg");
+        if (svg) {
+          if (index < selectedRating) {
+            svg.setAttribute("fill", "currentColor");
+            star.classList.remove("text-muted-foreground");
+            star.classList.add("text-foreground");
+          } else {
+            svg.setAttribute("fill", "none");
+            star.classList.remove("text-foreground");
+            star.classList.add("text-muted-foreground");
+          }
+        }
+      });
+    }
+
+    function highlightStars(count) {
+      stars.forEach((star, index) => {
+        const svg = star.querySelector("svg");
+        if (svg) {
+          if (index < count) {
+            svg.setAttribute("fill", "currentColor");
+            star.classList.remove("text-muted-foreground");
+            star.classList.add("text-foreground");
+          } else {
+            svg.setAttribute("fill", "none");
+            star.classList.remove("text-foreground");
+            star.classList.add("text-muted-foreground");
+          }
+        }
+      });
+    }
+  });
+</script>

@@ -1,0 +1,181 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getOrderById } from "@/data/store";
+
+export const prerender = false;
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/sign-in");
+}
+
+const { id } = Astro.params;
+const order = getOrderById(id!);
+
+if (!order) {
+  return Astro.redirect("/orders");
+}
+
+const statusColors: Record<string, string> = {
+  pending: "bg-yellow-500/10 text-yellow-600",
+  processing: "bg-blue-500/10 text-blue-600",
+  shipped: "bg-purple-500/10 text-purple-600",
+  delivered: "bg-green-500/10 text-green-600",
+  cancelled: "bg-red-500/10 text-red-600",
+};
+
+const statusSteps = ["pending", "processing", "shipped", "delivered"];
+const currentStepIndex = statusSteps.indexOf(order.status);
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+---
+
+<Layout title={`Order ${order.id} - usestore`}>
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-3xl mx-auto">
+      <!-- Breadcrumb -->
+      <nav class="text-sm text-muted-foreground mb-8">
+        <a href="/orders" class="hover:text-foreground">Orders</a>
+        <span class="mx-2">/</span>
+        <span class="text-foreground">{order.id}</span>
+      </nav>
+
+      <!-- Order Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-medium">{order.id}</h1>
+          <p class="text-sm text-muted-foreground mt-2">
+            Placed on {formatDate(order.date)}
+          </p>
+        </div>
+        <span class={`text-sm px-3 py-1.5 capitalize ${statusColors[order.status]}`}>
+          {order.status}
+        </span>
+      </div>
+
+      <!-- Order Progress -->
+      {order.status !== "cancelled" && (
+        <div class="border p-6 mb-8">
+          <h2 class="text-sm font-medium mb-6">Order Status</h2>
+          <div class="flex justify-between relative">
+            <div class="absolute top-3 left-0 right-0 h-0.5 bg-muted"></div>
+            <div
+              class="absolute top-3 left-0 h-0.5 bg-foreground transition-all"
+              style={`width: ${(currentStepIndex / (statusSteps.length - 1)) * 100}%`}
+            ></div>
+            {statusSteps.map((step, index) => (
+              <div class="relative flex flex-col items-center">
+                <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${index <= currentStepIndex ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>
+                  {index < currentStepIndex ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  ) : (
+                    index + 1
+                  )}
+                </div>
+                <span class={`mt-2 text-xs capitalize ${index <= currentStepIndex ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {step}
+                </span>
+              </div>
+            ))}
+          </div>
+          {order.trackingNumber && (
+            <div class="mt-6 pt-4 border-t">
+              <p class="text-sm">
+                <span class="text-muted-foreground">Tracking: </span>
+                <span class="font-mono">{order.trackingNumber}</span>
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <!-- Order Items -->
+      <div class="border p-6 mb-8">
+        <h2 class="text-sm font-medium mb-6">Items</h2>
+        <div class="space-y-4">
+          {order.items.map((item) => (
+            <div class="flex gap-4">
+              <a href={`/products/${item.productSlug}`} class="shrink-0">
+                <div class="w-20 h-24 bg-muted flex items-center justify-center text-muted-foreground/30">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                  </svg>
+                </div>
+              </a>
+              <div class="flex-1 min-w-0">
+                <a href={`/products/${item.productSlug}`} class="font-medium hover:underline">
+                  {item.productName}
+                </a>
+                <p class="text-sm text-muted-foreground mt-1">
+                  {item.size && `Size: ${item.size}`}
+                  {item.size && item.color && " / "}
+                  {item.color && `Color: ${item.color}`}
+                </p>
+                <p class="text-sm text-muted-foreground mt-1">
+                  Qty: {item.quantity}
+                </p>
+              </div>
+              <p class="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Order Summary & Shipping -->
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Shipping Address -->
+        <div class="border p-6">
+          <h2 class="text-sm font-medium mb-6">Shipping Address</h2>
+          <address class="text-sm text-muted-foreground not-italic leading-relaxed">
+            {order.shippingAddress.name}<br />
+            {order.shippingAddress.street}<br />
+            {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}<br />
+            {order.shippingAddress.country}
+          </address>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="border p-6">
+          <h2 class="text-sm font-medium mb-6">Order Summary</h2>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Subtotal</span>
+              <span>${order.subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">Shipping</span>
+              <span>{order.shipping === 0 ? "Free" : `$${order.shipping.toFixed(2)}`}</span>
+            </div>
+            <div class="flex justify-between pt-2 border-t font-medium">
+              <span>Total</span>
+              <span>${order.total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-8 flex flex-col sm:flex-row gap-3">
+        <a href="/orders" class="py-2.5 px-6 border border-input text-sm font-medium text-center hover:bg-muted">
+          Back to Orders
+        </a>
+        {order.status === "delivered" && (
+          <button class="py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+            Buy Again
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+</Layout>

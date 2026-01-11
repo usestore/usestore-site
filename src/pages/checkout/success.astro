@@ -1,0 +1,66 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/sign-in");
+}
+
+// Mock order data
+const order = {
+  id: "ORD-2025-002",
+  email: "customer@example.com",
+  total: 121.09,
+};
+---
+
+<Layout title="Order Confirmed - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-lg mx-auto text-center">
+      <div class="w-16 h-16 mx-auto mb-6 bg-green-500/10 text-green-600 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <h1 class="text-2xl font-medium">Thank you for your order!</h1>
+      <p class="text-muted-foreground mt-2">
+        Your order <span class="text-foreground font-medium">{order.id}</span> has been placed.
+      </p>
+
+      <div class="border p-6 mt-8 text-left">
+        <h2 class="font-medium mb-6">Order Details</h2>
+        <dl class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-muted-foreground">Order number</dt>
+            <dd class="font-medium">{order.id}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-muted-foreground">Confirmation sent to</dt>
+            <dd>{order.email}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-muted-foreground">Total</dt>
+            <dd class="font-medium">${order.total.toFixed(2)}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <p class="text-sm text-muted-foreground mt-6">
+        We'll send you shipping confirmation when your order ships.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 mt-8 justify-center">
+        <a href="/orders" class="py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+          View Order
+        </a>
+        <a href="/products" class="py-2.5 px-6 border border-input text-sm font-medium hover:bg-muted">
+          Continue Shopping
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

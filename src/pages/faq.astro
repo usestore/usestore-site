@@ -1,0 +1,138 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+const faqs = [
+  {
+    category: "Orders & Shipping",
+    questions: [
+      {
+        q: "How long does shipping take?",
+        a: "Standard shipping typically takes 5-7 business days within the US. Express shipping (2-3 business days) and overnight options are available at checkout."
+      },
+      {
+        q: "Do you offer international shipping?",
+        a: "Yes, we ship to over 50 countries worldwide. International orders typically arrive within 7-14 business days. Customs duties and taxes may apply."
+      },
+      {
+        q: "How can I track my order?",
+        a: "Once your order ships, you'll receive an email with tracking information. You can also track your order anytime from your account page."
+      },
+      {
+        q: "Can I change or cancel my order?",
+        a: "Orders can be modified or cancelled within 1 hour of placement. After that, please contact our support team and we'll do our best to help."
+      }
+    ]
+  },
+  {
+    category: "Returns & Exchanges",
+    questions: [
+      {
+        q: "What is your return policy?",
+        a: "We offer free returns within 30 days of delivery. Items must be unworn, unwashed, and in original condition with tags attached."
+      },
+      {
+        q: "How do I start a return?",
+        a: "Log into your account, go to your order history, and select 'Start Return' for the item you'd like to return. You'll receive a prepaid shipping label via email."
+      },
+      {
+        q: "How long do refunds take?",
+        a: "Once we receive your return, refunds are processed within 3-5 business days. It may take an additional 5-10 days for the refund to appear on your statement."
+      },
+      {
+        q: "Can I exchange for a different size?",
+        a: "Yes! You can request an exchange for a different size during the return process. If the new size is in stock, we'll ship it as soon as we receive your return."
+      }
+    ]
+  },
+  {
+    category: "Products & Sizing",
+    questions: [
+      {
+        q: "How do I find my size?",
+        a: "Check our detailed size guide for measurements. If you're between sizes, we generally recommend sizing up for a relaxed fit or sizing down for a more fitted look."
+      },
+      {
+        q: "What materials do you use?",
+        a: "We use premium materials including organic cotton, linen, and sustainable synthetics. Each product page lists specific material composition."
+      },
+      {
+        q: "How should I care for my items?",
+        a: "Care instructions are on each product page and garment label. Generally, we recommend washing in cold water and hanging to dry to extend garment life."
+      },
+      {
+        q: "Will items be restocked?",
+        a: "Popular items are typically restocked. Sign up for notifications on any out-of-stock product page and we'll email you when it's back."
+      }
+    ]
+  },
+  {
+    category: "Account & Payment",
+    questions: [
+      {
+        q: "What payment methods do you accept?",
+        a: "We accept all major credit cards (Visa, Mastercard, American Express), PayPal, Apple Pay, and Google Pay."
+      },
+      {
+        q: "Is my payment information secure?",
+        a: "Yes, all transactions are encrypted and processed through secure payment providers. We never store your full payment details."
+      },
+      {
+        q: "Do you offer gift cards?",
+        a: "Yes, digital gift cards are available in various amounts. They're delivered instantly via email and never expire."
+      },
+      {
+        q: "How do I reset my password?",
+        a: "Click 'Forgot Password' on the sign-in page. Enter your email and we'll send you a link to reset your password."
+      }
+    ]
+  }
+];
+---
+
+<Layout title="FAQ - usestore">
+  <div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-2xl font-medium">Frequently Asked Questions</h1>
+        <p class="text-muted-foreground mt-2">
+          Find answers to common questions about orders, shipping, returns, and more.
+        </p>
+      </div>
+
+      <div class="space-y-8">
+        {faqs.map((category) => (
+          <section>
+            <h2 class="text-lg font-medium mb-6 pb-2 border-b">{category.category}</h2>
+            <div class="space-y-4">
+              {category.questions.map((faq) => (
+                <details class="group border-b pb-4">
+                  <summary class="flex justify-between items-center cursor-pointer list-none py-2">
+                    <span class="font-medium pr-4">{faq.q}</span>
+                    <span class="text-muted-foreground shrink-0 transition-transform group-open:rotate-180">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m6 9 6 6 6-6"></path>
+                      </svg>
+                    </span>
+                  </summary>
+                  <p class="text-muted-foreground pt-2 leading-relaxed">
+                    {faq.a}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <div class="mt-12 text-center p-6 bg-muted/30 border">
+        <h2 class="text-lg font-medium">Still have questions?</h2>
+        <p class="text-sm text-muted-foreground mt-2 mb-6">
+          Our support team is here to help you with anything you need.
+        </p>
+        <a href="/contact" class="inline-block py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+          Contact Support
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

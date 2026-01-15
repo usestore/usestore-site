@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { products } from "@/data/store";
+import { getCart, getImageUrl, type CartItem } from "@/lib/api";
 
 export const prerender = false;
 
@@ -10,13 +10,20 @@ if (!user) {
   return Astro.redirect("/auth/sign-in");
 }
 
-// Mock cart items for demo
-const cartItems = [
-  { product: products[0], quantity: 2, size: "M", color: "White" },
-  { product: products[4], quantity: 1, size: "L", color: "Gray" },
-];
+let cartItems: CartItem[] = [];
 
-const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+try {
+  const response = await getCart(Astro.request.headers.get("cookie") || "");
+  cartItems = response.data.items || [];
+} catch {
+  // Ignore errors
+}
+
+if (cartItems.length === 0) {
+  return Astro.redirect("/cart");
+}
+
+const subtotal = cartItems.reduce((sum, item) => sum + (item.price?.price || 0) * item.item.quantity, 0);
 const shipping = subtotal >= 100 ? 0 : 10;
 const tax = subtotal * 0.08;
 const total = subtotal + shipping + tax;
@@ -26,25 +33,22 @@ const total = subtotal + shipping + tax;
   <div class="container mx-auto px-4 py-12 md:py-16">
     <h1 class="text-2xl font-medium mb-8">Checkout</h1>
 
-    <div class="grid lg:grid-cols-12 gap-8 lg:gap-12">
+    <form id="checkout-form" class="grid lg:grid-cols-12 gap-8 lg:gap-12">
       <!-- Checkout Form -->
       <div class="lg:col-span-7 xl:col-span-8 space-y-8">
         <!-- Contact -->
         <section>
           <h2 class="text-lg font-medium mb-6">Contact</h2>
           <div class="space-y-4">
-            {!user && (
-              <p class="text-sm text-muted-foreground">
-                Already have an account? <a href="/auth/sign-in" class="underline underline-offset-4 hover:text-foreground">Sign in</a>
-              </p>
-            )}
             <div>
               <label for="email" class="text-sm font-medium">Email</label>
               <input
                 id="email"
                 type="email"
+                name="email"
                 value={user?.email || ""}
                 placeholder="you@example.com"
+                required
                 class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
@@ -60,7 +64,9 @@ const total = subtotal + shipping + tax;
                 <label for="firstName" class="text-sm font-medium">First name</label>
                 <input
                   id="firstName"
+                  name="firstName"
                   type="text"
+                  required
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -68,23 +74,28 @@ const total = subtotal + shipping + tax;
                 <label for="lastName" class="text-sm font-medium">Last name</label>
                 <input
                   id="lastName"
+                  name="lastName"
                   type="text"
+                  required
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
             </div>
             <div>
-              <label for="address" class="text-sm font-medium">Address</label>
+              <label for="address1" class="text-sm font-medium">Address</label>
               <input
-                id="address"
+                id="address1"
+                name="address1"
                 type="text"
+                required
                 class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
             <div>
-              <label for="apartment" class="text-sm font-medium">Apartment, suite, etc. (optional)</label>
+              <label for="address2" class="text-sm font-medium">Apartment, suite, etc. (optional)</label>
               <input
-                id="apartment"
+                id="address2"
+                name="address2"
                 type="text"
                 class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
@@ -94,7 +105,9 @@ const total = subtotal + shipping + tax;
                 <label for="city" class="text-sm font-medium">City</label>
                 <input
                   id="city"
+                  name="city"
                   type="text"
+                  required
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -102,23 +115,38 @@ const total = subtotal + shipping + tax;
                 <label for="state" class="text-sm font-medium">State</label>
                 <input
                   id="state"
+                  name="state"
                   type="text"
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
               <div>
-                <label for="zip" class="text-sm font-medium">ZIP code</label>
+                <label for="postalCode" class="text-sm font-medium">ZIP code</label>
                 <input
-                  id="zip"
+                  id="postalCode"
+                  name="postalCode"
                   type="text"
+                  required
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
             </div>
             <div>
+              <label for="country" class="text-sm font-medium">Country</label>
+              <input
+                id="country"
+                name="country"
+                type="text"
+                value="US"
+                required
+                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
               <label for="phone" class="text-sm font-medium">Phone</label>
               <input
                 id="phone"
+                name="phone"
                 type="tel"
                 class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
@@ -126,45 +154,26 @@ const total = subtotal + shipping + tax;
           </div>
         </section>
 
-        <!-- Payment -->
+        <!-- Customer Note -->
         <section>
-          <h2 class="text-lg font-medium mb-6">Payment</h2>
-          <div class="border p-4 space-y-4">
-            <div>
-              <label for="cardNumber" class="text-sm font-medium">Card number</label>
-              <input
-                id="cardNumber"
-                type="text"
-                placeholder="1234 5678 9012 3456"
-                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label for="expiry" class="text-sm font-medium">Expiry date</label>
-                <input
-                  id="expiry"
-                  type="text"
-                  placeholder="MM / YY"
-                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label for="cvc" class="text-sm font-medium">CVC</label>
-                <input
-                  id="cvc"
-                  type="text"
-                  placeholder="123"
-                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-            </div>
-          </div>
+          <h2 class="text-lg font-medium mb-6">Order Notes (optional)</h2>
+          <textarea
+            id="customerNote"
+            name="customerNote"
+            rows="3"
+            placeholder="Any special instructions for your order..."
+            class="w-full py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+          ></textarea>
         </section>
 
-        <a href="/checkout/success" class="block w-full py-3 bg-primary text-primary-foreground text-sm font-medium text-center hover:bg-primary/90">
+        <button
+          type="submit"
+          id="place-order-btn"
+          class="block w-full py-3 bg-primary text-primary-foreground text-sm font-medium text-center hover:bg-primary/90 disabled:opacity-50"
+        >
           Place Order
-        </a>
+        </button>
+        <p id="error-message" class="text-sm text-red-600 hidden"></p>
       </div>
 
       <!-- Order Summary -->
@@ -173,23 +182,32 @@ const total = subtotal + shipping + tax;
           <h2 class="font-medium mb-8">Order Summary</h2>
 
           <div class="space-y-4 mb-6">
-            {cartItems.map((item) => (
-              <div class="flex gap-4">
-                <div class="w-16 h-20 bg-muted shrink-0 flex items-center justify-center text-muted-foreground/30 relative">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                    <circle cx="9" cy="9" r="2"></circle>
-                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                  </svg>
-                  <span class="absolute -top-2 -right-2 w-5 h-5 bg-muted-foreground text-background text-xs flex items-center justify-center rounded-full">{item.quantity}</span>
+            {cartItems.map((item) => {
+              const imageUrl = getImageUrl(item.product?.image);
+              return (
+                <div class="flex gap-4">
+                  <div class="w-16 h-20 bg-muted shrink-0 flex items-center justify-center text-muted-foreground/30 relative overflow-hidden">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={item.product?.name} class="w-full h-full object-cover" />
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                        <circle cx="9" cy="9" r="2"></circle>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                      </svg>
+                    )}
+                    <span class="absolute -top-2 -right-2 w-5 h-5 bg-muted-foreground text-background text-xs flex items-center justify-center rounded-full">{item.item.quantity}</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium">{item.product?.name}</p>
+                    {item.variant?.title && (
+                      <p class="text-xs text-muted-foreground mt-0.5">{item.variant.title}</p>
+                    )}
+                  </div>
+                  <p class="text-sm">${((item.price?.price || 0) * item.item.quantity).toFixed(2)}</p>
                 </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium">{item.product.name}</p>
-                  <p class="text-xs text-muted-foreground mt-0.5">{item.size} / {item.color}</p>
-                </div>
-                <p class="text-sm">${(item.product.price * item.quantity).toFixed(2)}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div class="space-y-3 text-sm border-t pt-4">
@@ -202,7 +220,7 @@ const total = subtotal + shipping + tax;
               <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-muted-foreground">Tax</span>
+              <span class="text-muted-foreground">Tax (est.)</span>
               <span>${tax.toFixed(2)}</span>
             </div>
           </div>
@@ -213,6 +231,59 @@ const total = subtotal + shipping + tax;
           </div>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 </Layout>
+
+<script is:inline>
+  const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:3000' : '';
+
+  const form = document.getElementById('checkout-form');
+  const submitBtn = document.getElementById('place-order-btn');
+  const errorMsg = document.getElementById('error-message');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    errorMsg.classList.add('hidden');
+
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/checkout/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          shippingAddress: {
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            phone: formData.get('phone') || undefined,
+            address1: formData.get('address1'),
+            address2: formData.get('address2') || undefined,
+            city: formData.get('city'),
+            state: formData.get('state') || undefined,
+            postalCode: formData.get('postalCode'),
+            country: formData.get('country'),
+          },
+          customerNote: formData.get('customerNote') || undefined,
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Checkout failed');
+      }
+
+      // Redirect to success page with order ID
+      window.location.href = `/checkout/success?orderId=${data.data.id}`;
+    } catch (err) {
+      errorMsg.textContent = err.message || 'Something went wrong. Please try again.';
+      errorMsg.classList.remove('hidden');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Place Order';
+    }
+  });
+</script>

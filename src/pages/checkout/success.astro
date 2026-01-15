@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { getOrderById, type OrderDetail } from "@/lib/api";
 
 export const prerender = false;
 
@@ -9,12 +10,21 @@ if (!user) {
   return Astro.redirect("/auth/sign-in");
 }
 
-// Mock order data
-const order = {
-  id: "ORD-2025-002",
-  email: "customer@example.com",
-  total: 121.09,
-};
+const orderId = Astro.url.searchParams.get("orderId");
+
+if (!orderId) {
+  return Astro.redirect("/orders");
+}
+
+let orderData: OrderDetail | null = null;
+try {
+  const response = await getOrderById(orderId, Astro.request.headers.get("cookie") || "");
+  orderData = response.data;
+} catch {
+  return Astro.redirect("/orders");
+}
+
+const { order } = orderData;
 ---
 
 <Layout title="Order Confirmed - usestore">
@@ -28,7 +38,7 @@ const order = {
 
       <h1 class="text-2xl font-medium">Thank you for your order!</h1>
       <p class="text-muted-foreground mt-2">
-        Your order <span class="text-foreground font-medium">{order.id}</span> has been placed.
+        Your order <span class="text-foreground font-medium">{order.orderNumber || order.id}</span> has been placed.
       </p>
 
       <div class="border p-6 mt-8 text-left">
@@ -36,15 +46,19 @@ const order = {
         <dl class="space-y-3 text-sm">
           <div class="flex justify-between">
             <dt class="text-muted-foreground">Order number</dt>
-            <dd class="font-medium">{order.id}</dd>
+            <dd class="font-medium">{order.orderNumber || order.id}</dd>
           </div>
           <div class="flex justify-between">
             <dt class="text-muted-foreground">Confirmation sent to</dt>
-            <dd>{order.email}</dd>
+            <dd>{user.email}</dd>
           </div>
           <div class="flex justify-between">
             <dt class="text-muted-foreground">Total</dt>
-            <dd class="font-medium">${order.total.toFixed(2)}</dd>
+            <dd class="font-medium">${order.grandTotal.toFixed(2)} {order.currency}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-muted-foreground">Status</dt>
+            <dd class="capitalize">{order.status}</dd>
           </div>
         </dl>
       </div>
@@ -54,7 +68,7 @@ const order = {
       </p>
 
       <div class="flex flex-col sm:flex-row gap-3 mt-8 justify-center">
-        <a href="/orders" class="py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+        <a href={`/orders/${order.id}`} class="py-2.5 px-6 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
           View Order
         </a>
         <a href="/products" class="py-2.5 px-6 border border-input text-sm font-medium hover:bg-muted">

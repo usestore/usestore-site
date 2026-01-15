@@ -1,30 +1,31 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { products } from "@/data/store";
+import { searchProducts, getImageUrl } from "@/lib/api";
 
 export const prerender = false;
 
 const query = Astro.url.searchParams.get("q") || "";
-const sortBy = Astro.url.searchParams.get("sort") || "relevance";
+const sortBy = (Astro.url.searchParams.get("sort") || "relevance") as "relevance" | "newest" | "price-low" | "price-high";
+const perPage = 24;
+const page = Math.max(1, parseInt(Astro.url.searchParams.get("page") || "1"));
 
-let results = products;
+let results: Awaited<ReturnType<typeof searchProducts>>["data"] = [];
+let total = 0;
+let pageCount = 1;
 
 if (query) {
-  const searchTerms = query.toLowerCase().split(" ");
-  results = products.filter((product) => {
-    const searchText = `${product.name} ${product.description} ${product.category}`.toLowerCase();
-    return searchTerms.some((term) => searchText.includes(term));
-  });
+  try {
+    const response = await searchProducts({ q: query, sort: sortBy, page, perPage });
+    results = response.data;
+    total = response.total ?? 0;
+    pageCount = response.pageCount ?? 1;
+  } catch {
+    // Ignore errors
+  }
 }
 
-// Sort results
-if (sortBy === "price-low") {
-  results = [...results].sort((a, b) => a.price - b.price);
-} else if (sortBy === "price-high") {
-  results = [...results].sort((a, b) => b.price - a.price);
-} else if (sortBy === "newest") {
-  results = [...results].sort((a, b) => b.id - a.id);
-}
+const hasNextPage = page < pageCount;
+const hasPrevPage = page > 1;
 ---
 
 <Layout title={query ? `Search: ${query} - usestore` : "Search - usestore"}>
@@ -57,7 +58,7 @@ if (sortBy === "price-low") {
         <!-- Results Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <p class="text-muted-foreground">
-            {results.length} {results.length === 1 ? "result" : "results"} for "<span class="text-foreground font-medium">{query}</span>"
+            {total} {total === 1 ? "result" : "results"} for "<span class="text-foreground font-medium">{query}</span>"
           </p>
           <div class="flex items-center gap-2">
             <label for="sort" class="text-sm text-muted-foreground">Sort by:</label>
@@ -77,32 +78,96 @@ if (sortBy === "price-low") {
 
         {results.length > 0 ? (
           <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-            {results.map((product) => (
-              <a href={`/products/${product.slug}`} class="group">
-                <div class="aspect-[3/4] bg-muted mb-3 relative overflow-hidden">
-                  <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                      <circle cx="9" cy="9" r="2"></circle>
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                    </svg>
+            {results.map(({ product, price }) => {
+              const imageUrl = getImageUrl(product.image);
+              const hasDiscount = price?.compareAtPrice && price.compareAtPrice > price.price;
+
+              return (
+                <a href={`/products/${product.slug}`} class="group">
+                  <div class="aspect-[3/4] bg-muted mb-3 relative overflow-hidden">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={product.name}
+                        class="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                          <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                          <circle cx="9" cy="9" r="2"></circle>
+                          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                        </svg>
+                      </div>
+                    )}
+                    {hasDiscount && (
+                      <span class="absolute top-2 left-2 bg-foreground text-background text-xs px-2 py-1">
+                        Sale
+                      </span>
+                    )}
                   </div>
-                  {product.originalPrice && (
-                    <span class="absolute top-2 left-2 bg-foreground text-background text-xs px-2 py-1">
-                      Sale
-                    </span>
-                  )}
-                </div>
-                <h3 class="text-sm font-medium group-hover:underline">{product.name}</h3>
-                <div class="flex items-center gap-2 mt-1">
-                  <span class="text-sm">${product.price.toFixed(2)}</span>
-                  {product.originalPrice && (
-                    <span class="text-sm text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
-                  )}
-                </div>
-              </a>
-            ))}
+                  <h3 class="text-sm font-medium group-hover:underline">{product.name}</h3>
+                  <div class="flex items-center gap-2 mt-1">
+                    {price ? (
+                      <>
+                        <span class="text-sm">${price.price.toFixed(2)}</span>
+                        {hasDiscount && (
+                          <span class="text-sm text-muted-foreground line-through">${price.compareAtPrice?.toFixed(2)}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span class="text-sm text-muted-foreground">Price unavailable</span>
+                    )}
+                  </div>
+                </a>
+              );
+            })}
           </div>
+
+          {/* Pagination */}
+          {pageCount > 1 && (
+            <div class="flex items-center justify-center gap-4 mt-12">
+              {hasPrevPage ? (
+                <a
+                  href={`/search?q=${encodeURIComponent(query)}&sort=${sortBy}&page=${page - 1}`}
+                  class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium hover:bg-muted"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                  Previous
+                </a>
+              ) : (
+                <span class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium text-muted-foreground cursor-not-allowed">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                  Previous
+                </span>
+              )}
+              <span class="text-sm text-muted-foreground">
+                Page {page} of {pageCount}
+              </span>
+              {hasNextPage ? (
+                <a
+                  href={`/search?q=${encodeURIComponent(query)}&sort=${sortBy}&page=${page + 1}`}
+                  class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium hover:bg-muted"
+                >
+                  Next
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </a>
+              ) : (
+                <span class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium text-muted-foreground cursor-not-allowed">
+                  Next
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </span>
+              )}
+            </div>
+          )}
         ) : (
           <div class="text-center py-16 max-w-sm mx-auto">
             <div class="w-16 h-16 mx-auto mb-6 bg-muted flex items-center justify-center text-muted-foreground">

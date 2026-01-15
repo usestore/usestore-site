@@ -1,17 +1,28 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { getCategoryBySlug, getProductsByCategory } from "@/data/store";
+import { getCategoryBySlug, getCategoryProducts, getImageUrl, type ApiCategory } from "@/lib/api";
 
 export const prerender = false;
 
 const { slug } = Astro.params;
-const category = getCategoryBySlug(slug!);
+
+let category: ApiCategory | null = null;
+try {
+  const response = await getCategoryBySlug(slug!);
+  category = response.data;
+} catch {
+  return Astro.redirect("/categories");
+}
 
 if (!category) {
   return Astro.redirect("/categories");
 }
 
-const products = getProductsByCategory(slug!);
+const perPage = 24;
+const page = Math.max(1, parseInt(Astro.url.searchParams.get("page") || "1"));
+const { data: products, total, pageCount } = await getCategoryProducts(slug!, { page, perPage });
+const hasNextPage = page < (pageCount ?? 1);
+const hasPrevPage = page > 1;
 ---
 
 <Layout title={`${category.name} - usestore`}>
@@ -27,37 +38,106 @@ const products = getProductsByCategory(slug!);
 
     <div class="mb-8">
       <h1 class="text-2xl font-medium">{category.name}</h1>
-      <p class="text-sm text-muted-foreground mt-2">{category.description}</p>
+      {category.description && (
+        <p class="text-sm text-muted-foreground mt-2">{category.description}</p>
+      )}
+      <p class="text-sm text-muted-foreground mt-1">{total} products</p>
     </div>
 
     {products.length > 0 ? (
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-        {products.map((product) => (
-          <a href={`/products/${product.slug}`} class="group">
-            <div class="aspect-[3/4] bg-muted mb-3 relative overflow-hidden">
-              <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                  <circle cx="9" cy="9" r="2"></circle>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+      <>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+          {products.map(({ product, price }) => {
+            const imageUrl = getImageUrl(product.image);
+            const hasDiscount = price?.compareAtPrice && price.compareAtPrice > price.price;
+
+            return (
+              <a href={`/products/${product.slug}`} class="group">
+                <div class="aspect-[3/4] bg-muted mb-3 relative overflow-hidden">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={product.name}
+                      class="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div class="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                        <circle cx="9" cy="9" r="2"></circle>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                      </svg>
+                    </div>
+                  )}
+                  {hasDiscount && (
+                    <span class="absolute top-2 left-2 bg-foreground text-background text-xs px-2 py-1">
+                      Sale
+                    </span>
+                  )}
+                </div>
+                <h3 class="text-sm group-hover:underline">{product.name}</h3>
+                <div class="flex items-center gap-2 mt-1">
+                  {price ? (
+                    <>
+                      <p class="text-sm text-muted-foreground">${price.price.toFixed(2)}</p>
+                      {hasDiscount && (
+                        <p class="text-sm text-muted-foreground line-through">${price.compareAtPrice?.toFixed(2)}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p class="text-sm text-muted-foreground">Price unavailable</p>
+                  )}
+                </div>
+              </a>
+            );
+          })}
+        </div>
+
+        {/* Pagination */}
+        {(pageCount ?? 1) > 1 && (
+          <div class="flex items-center justify-center gap-4 mt-12">
+            {hasPrevPage ? (
+              <a
+                href={`/categories/${slug}?page=${page - 1}`}
+                class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium hover:bg-muted"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
                 </svg>
-              </div>
-              {product.originalPrice && (
-                <span class="absolute top-2 left-2 bg-foreground text-background text-xs px-2 py-1">
-                  Sale
-                </span>
-              )}
-            </div>
-            <h3 class="text-sm group-hover:underline">{product.name}</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <p class="text-sm text-muted-foreground">${product.price.toFixed(2)}</p>
-              {product.originalPrice && (
-                <p class="text-sm text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</p>
-              )}
-            </div>
-          </a>
-        ))}
-      </div>
+                Previous
+              </a>
+            ) : (
+              <span class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium text-muted-foreground cursor-not-allowed">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                Previous
+              </span>
+            )}
+            <span class="text-sm text-muted-foreground">
+              Page {page} of {pageCount}
+            </span>
+            {hasNextPage ? (
+              <a
+                href={`/categories/${slug}?page=${page + 1}`}
+                class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium hover:bg-muted"
+              >
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </a>
+            ) : (
+              <span class="inline-flex items-center gap-2 px-4 py-2 border border-input text-sm font-medium text-muted-foreground cursor-not-allowed">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </span>
+            )}
+          </div>
+        )}
+      </>
     ) : (
       <div class="text-center py-16">
         <p class="text-muted-foreground">No products in this category yet.</p>

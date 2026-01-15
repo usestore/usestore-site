@@ -58,7 +58,7 @@ export default function Header({ hideAuthLinks }: HeaderProps = {}) {
               <path d="M16 10a4 4 0 0 1-8 0"></path>
             </svg>
           </a>
-          {!user ? (
+          {!user || user.isAnonymous ? (
             <a href="/auth/sign-in" className="hidden sm:block text-muted-foreground hover:text-foreground">
               Sign in
             </a>

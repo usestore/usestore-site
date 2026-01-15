@@ -5,6 +5,7 @@ import { ProductImageCarousel } from "@/components/product/image-carousel";
 
 export const prerender = false;
 
+const { user } = Astro.locals;
 const { slug } = Astro.params;
 
 let productData: ProductDetail | null = null;
@@ -131,10 +132,13 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
         {Object.entries(groupedOptions).map(([optionName, values]) => (
           <div class="mt-6">
             <h3 class="text-sm font-medium mb-2">{optionName}</h3>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2" data-option-group={optionName}>
               {values.map((value, index) => (
                 <button
-                  class={`inline-flex items-center justify-center py-2.5 px-4 border text-sm ${index === 0 ? 'border-foreground bg-foreground text-background' : 'border-input hover:border-foreground'}`}
+                  type="button"
+                  class={`option-btn inline-flex items-center justify-center py-2.5 px-4 border text-sm transition-colors ${index === 0 ? 'selected border-foreground bg-foreground text-background' : 'border-input hover:border-foreground'}`}
+                  data-option-name={optionName}
+                  data-option-value={value}
                 >
                   {value}
                 </button>
@@ -153,13 +157,22 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
           >
             Add to Cart
           </button>
-          <button
-            class="w-full py-3 border border-input text-sm font-medium hover:bg-muted"
-            data-product-id={product.id}
-            id="add-to-wishlist-btn"
-          >
-            Add to Wishlist
-          </button>
+          {user ? (
+            <button
+              class="w-full py-3 border border-input text-sm font-medium hover:bg-muted"
+              data-product-id={product.id}
+              id="add-to-wishlist-btn"
+            >
+              Add to Wishlist
+            </button>
+          ) : (
+            <a
+              href="/auth/sign-in"
+              class="w-full py-3 border border-input text-sm font-medium hover:bg-muted text-center block"
+            >
+              Sign in to Save
+            </a>
+          )}
         </div>
 
         <!-- Product Details -->
@@ -434,4 +447,276 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
       });
     }
   });
+</script>
+
+<script define:vars={{ variants, variantOptionValues, isAuthenticated: !!user }}>
+  // Product variant data for client-side selection
+  window.__productVariants = variants;
+  window.__variantOptionValues = variantOptionValues;
+  window.__isAuthenticated = isAuthenticated;
+</script>
+
+<script is:inline>
+  // Product option selection handling
+  document.addEventListener("DOMContentLoaded", () => {
+    const optionButtons = document.querySelectorAll(".option-btn");
+    const addToCartBtn = document.getElementById("add-to-cart-btn");
+    const priceDisplay = document.querySelector(".text-xl.md\\:text-2xl.font-medium");
+    const comparePriceDisplay = document.querySelector(".text-lg.text-muted-foreground.line-through");
+    const discountBadge = document.querySelector(".text-sm.px-2.py-0\\.5.bg-red-500\\/10.text-red-600");
+
+    const variants = window.__productVariants || [];
+    const variantOptionValues = window.__variantOptionValues || [];
+
+    // Track selected options
+    const selectedOptions = {};
+
+    // Initialize with first option of each group selected
+    document.querySelectorAll("[data-option-group]").forEach(group => {
+      const optionName = group.dataset.optionGroup;
+      const firstBtn = group.querySelector(".option-btn");
+      if (firstBtn) {
+        selectedOptions[optionName] = firstBtn.dataset.optionValue;
+      }
+    });
+
+    // Handle option button clicks
+    optionButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const optionName = btn.dataset.optionName;
+        const optionValue = btn.dataset.optionValue;
+
+        // Update selected options
+        selectedOptions[optionName] = optionValue;
+
+        // Update button styles within the same option group
+        const group = btn.closest("[data-option-group]");
+        if (group) {
+          group.querySelectorAll(".option-btn").forEach(groupBtn => {
+            if (groupBtn.dataset.optionValue === optionValue) {
+              groupBtn.classList.add("selected", "border-foreground", "bg-foreground", "text-background");
+              groupBtn.classList.remove("border-input");
+            } else {
+              groupBtn.classList.remove("selected", "border-foreground", "bg-foreground", "text-background");
+              groupBtn.classList.add("border-input");
+            }
+          });
+        }
+
+        // Find matching variant
+        const matchingVariant = findMatchingVariant();
+        if (matchingVariant) {
+          updateProductDisplay(matchingVariant);
+        }
+      });
+    });
+
+    function findMatchingVariant() {
+      const selectedOptionNames = Object.keys(selectedOptions);
+
+      // If no options selected, return default variant
+      if (selectedOptionNames.length === 0) {
+        return variants.find(v => v.variant.isDefault) || variants[0];
+      }
+
+      // Find variant that matches all selected options
+      for (const variantData of variants) {
+        const variantId = variantData.variant.id;
+
+        // Get all option values for this variant
+        const variantOptions = variantOptionValues.filter(
+          vov => vov.variant.id === variantId
+        );
+
+        // Check if all selected options match this variant
+        let allMatch = true;
+        for (const [optionName, optionValue] of Object.entries(selectedOptions)) {
+          const matchingOption = variantOptions.find(
+            vov => vov.option.name === optionName && vov.optionValue.value === optionValue
+          );
+          if (!matchingOption) {
+            allMatch = false;
+            break;
+          }
+        }
+
+        if (allMatch) {
+          return variantData;
+        }
+      }
+
+      // Fallback to default variant if no match found
+      return variants.find(v => v.variant.isDefault) || variants[0];
+    }
+
+    function updateProductDisplay(variantData) {
+      const { variant, price } = variantData;
+
+      // Update add to cart button data attributes
+      if (addToCartBtn) {
+        addToCartBtn.dataset.variantId = variant.id;
+        if (price) {
+          addToCartBtn.dataset.priceId = price.id;
+        }
+      }
+
+      // Update price display
+      if (price && priceDisplay) {
+        priceDisplay.textContent = `$${price.price.toFixed(2)}`;
+
+        const hasDiscount = price.compareAtPrice && price.compareAtPrice > price.price;
+
+        if (comparePriceDisplay) {
+          if (hasDiscount) {
+            comparePriceDisplay.textContent = `$${price.compareAtPrice.toFixed(2)}`;
+            comparePriceDisplay.style.display = "";
+          } else {
+            comparePriceDisplay.style.display = "none";
+          }
+        }
+
+        if (discountBadge) {
+          if (hasDiscount) {
+            const discountPercent = Math.round(((price.compareAtPrice - price.price) / price.compareAtPrice) * 100);
+            discountBadge.textContent = `${discountPercent}% OFF`;
+            discountBadge.style.display = "";
+          } else {
+            discountBadge.style.display = "none";
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<script>
+  import { authClient } from "@/lib/auth-client";
+
+  const API_BASE = import.meta.env.PUBLIC_SERVER_URL || "";
+
+  // Simple notification system
+  function showNotification(message: string, type: "success" | "error" = "success") {
+    const existing = document.querySelector(".product-notification");
+    if (existing) existing.remove();
+
+    const notification = document.createElement("div");
+    notification.className = `product-notification fixed bottom-4 right-4 px-4 py-3 text-sm font-medium z-50 ${
+      type === "success"
+        ? "bg-foreground text-background"
+        : "bg-red-500 text-white"
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+  // Ensure user is authenticated (sign in anonymously if needed)
+  async function ensureAuthenticated(): Promise<boolean> {
+    const { data: session } = await authClient.getSession();
+    if (session) return true;
+
+    // Sign in anonymously
+    const { data: anonSession, error } = await authClient.signIn.anonymous();
+    if (error || !anonSession) {
+      console.error("Failed to create anonymous session:", error);
+      return false;
+    }
+    return true;
+  }
+
+  // Add to Cart
+  const addToCartBtn = document.getElementById("add-to-cart-btn") as HTMLButtonElement | null;
+  if (addToCartBtn) {
+    addToCartBtn.addEventListener("click", async () => {
+      const variantId = addToCartBtn.dataset.variantId;
+      const priceId = addToCartBtn.dataset.priceId;
+
+      if (!variantId || !priceId) {
+        showNotification("Please select all options", "error");
+        return;
+      }
+
+      addToCartBtn.disabled = true;
+      addToCartBtn.textContent = "Adding...";
+
+      try {
+        // Ensure user is authenticated before adding to cart
+        const isAuthed = await ensureAuthenticated();
+        if (!isAuthed) {
+          showNotification("Failed to initialize session. Please try again.", "error");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE}/api/cart/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ variantId, priceId, quantity: 1 })
+        });
+
+        if (response.ok) {
+          showNotification("Added to cart!", "success");
+        } else {
+          const data = await response.json().catch(() => ({}));
+          showNotification(data.message || "Failed to add to cart", "error");
+        }
+      } catch (e) {
+        console.error("Failed to add to cart:", e);
+        showNotification("Failed to add to cart. Please try again.", "error");
+      } finally {
+        addToCartBtn.disabled = false;
+        addToCartBtn.textContent = "Add to Cart";
+      }
+    });
+  }
+
+  // Add to Wishlist
+  const addToWishlistBtn = document.getElementById("add-to-wishlist-btn") as HTMLButtonElement | null;
+  if (addToWishlistBtn) {
+    addToWishlistBtn.addEventListener("click", async () => {
+      const productId = addToWishlistBtn.dataset.productId;
+      const variantId = (document.getElementById("add-to-cart-btn") as HTMLButtonElement | null)?.dataset.variantId;
+
+      if (!productId) {
+        showNotification("Unable to add to wishlist", "error");
+        return;
+      }
+
+      addToWishlistBtn.disabled = true;
+      const originalText = addToWishlistBtn.textContent || "Add to Wishlist";
+      addToWishlistBtn.textContent = "Adding...";
+
+      try {
+        const response = await fetch(`${API_BASE}/api/wishlist/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ productId, variantId })
+        });
+
+        if (response.ok) {
+          showNotification("Added to wishlist!", "success");
+          addToWishlistBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+            </svg>
+            Added to Wishlist
+          `;
+        } else {
+          const data = await response.json().catch(() => ({}));
+          showNotification(data.message || "Failed to add to wishlist", "error");
+          addToWishlistBtn.textContent = originalText;
+        }
+      } catch (e) {
+        console.error("Failed to add to wishlist:", e);
+        showNotification("Failed to add to wishlist. Please try again.", "error");
+        addToWishlistBtn.textContent = originalText;
+      } finally {
+        addToWishlistBtn.disabled = false;
+      }
+    });
+  }
 </script>

@@ -32,13 +32,21 @@ export interface OrderAddress {
 
 export interface OrderItem {
   id: string
+  orderId: string
+  variantId: string
+  priceId: string
   productName: string
   variantTitle: string | null
   sku: string | null
   quantity: number
+  fulfilledQuantity: number
   unitPrice: number
-  totalPrice: number
-  currency: string
+  subtotal: number
+  discountAmount: number
+  total: number
+  image: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface OrderDetail {

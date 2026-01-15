@@ -110,26 +110,103 @@ try {
   </div>
 </Layout>
 
-<script is:inline>
-  const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:3000' : '';
+<script>
+  import { authClient } from "@/lib/auth-client";
+
+  const API_BASE = import.meta.env.PUBLIC_SERVER_URL || "";
+
+  // Simple notification system
+  function showNotification(message: string, type: "success" | "error" = "success") {
+    const existing = document.querySelector(".wishlist-notification");
+    if (existing) existing.remove();
+
+    const notification = document.createElement("div");
+    notification.className = `wishlist-notification fixed bottom-4 right-4 px-4 py-3 text-sm font-medium z-50 ${
+      type === "success"
+        ? "bg-foreground text-background"
+        : "bg-red-500 text-white"
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+  // Ensure user is authenticated (sign in anonymously if needed)
+  async function ensureAuthenticated(): Promise<boolean> {
+    const { data: session } = await authClient.getSession();
+    if (session) return true;
+
+    // Sign in anonymously
+    const { data: anonSession, error } = await authClient.signIn.anonymous();
+    if (error || !anonSession) {
+      console.error("Failed to create anonymous session:", error);
+      return false;
+    }
+    return true;
+  }
 
   // Remove from wishlist
   document.querySelectorAll('.remove-wishlist-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const itemId = btn.dataset.itemId;
+      const itemId = (btn as HTMLButtonElement).dataset.itemId;
+      const itemCard = btn.closest('.wishlist-item') as HTMLElement | null;
+
+      if (!itemId) return;
+
+      // Add visual feedback
+      if (itemCard) {
+        itemCard.style.opacity = '0.5';
+        itemCard.style.pointerEvents = 'none';
+      }
 
       try {
-        await fetch(`${API_BASE}/api/wishlist/`, {
+        const response = await fetch(`${API_BASE}/api/wishlist/`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ itemId })
         });
-        location.reload();
+
+        if (response.ok) {
+          showNotification('Removed from wishlist', 'success');
+          // Remove the item from DOM with animation
+          if (itemCard) {
+            itemCard.style.transition = 'opacity 0.3s, transform 0.3s';
+            itemCard.style.opacity = '0';
+            itemCard.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+              itemCard.remove();
+              // Update item count
+              const countEl = document.querySelector('.text-sm.text-muted-foreground.mt-2');
+              const remaining = document.querySelectorAll('.wishlist-item').length;
+              if (countEl) {
+                countEl.textContent = `${remaining} ${remaining === 1 ? 'item' : 'items'} saved`;
+              }
+              // Reload if empty to show empty state
+              if (remaining === 0) {
+                location.reload();
+              }
+            }, 300);
+          }
+        } else {
+          showNotification('Failed to remove from wishlist', 'error');
+          if (itemCard) {
+            itemCard.style.opacity = '1';
+            itemCard.style.pointerEvents = '';
+          }
+        }
       } catch (e) {
         console.error('Failed to remove from wishlist:', e);
+        showNotification('Failed to remove from wishlist', 'error');
+        if (itemCard) {
+          itemCard.style.opacity = '1';
+          itemCard.style.pointerEvents = '';
+        }
       }
     });
   });
@@ -137,25 +214,46 @@ try {
   // Add to cart
   document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const variantId = btn.dataset.variantId;
-      const priceId = btn.dataset.priceId;
+      const button = btn as HTMLButtonElement;
+      const variantId = button.dataset.variantId;
+      const priceId = button.dataset.priceId;
 
       if (!variantId || !priceId) {
-        alert('Unable to add to cart. Please visit the product page.');
+        showNotification('Unable to add to cart. Please visit the product page.', 'error');
         return;
       }
 
+      button.disabled = true;
+      const originalText = button.textContent || 'Add to Cart';
+      button.textContent = 'Adding...';
+
       try {
-        await fetch(`${API_BASE}/api/cart/`, {
+        // Ensure user is authenticated before adding to cart
+        const isAuthed = await ensureAuthenticated();
+        if (!isAuthed) {
+          showNotification("Failed to initialize session. Please try again.", "error");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE}/api/cart/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ variantId, priceId, quantity: 1 })
         });
-        alert('Added to cart!');
+
+        if (response.ok) {
+          showNotification('Added to cart!', 'success');
+        } else {
+          const data = await response.json().catch(() => ({}));
+          showNotification(data.message || 'Failed to add to cart', 'error');
+        }
       } catch (e) {
         console.error('Failed to add to cart:', e);
-        alert('Failed to add to cart. Please try again.');
+        showNotification('Failed to add to cart. Please try again.', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
       }
     });
   });

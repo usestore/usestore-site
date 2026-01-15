@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { getCart, getImageUrl, type CartItem } from "@/lib/api";
+import { getCart, getImageUrl, type CartItem, getCustomerData, type CustomerAddress } from "@/lib/api";
 
 export const prerender = false;
 
@@ -11,10 +11,18 @@ if (!user) {
 }
 
 let cartItems: CartItem[] = [];
+let savedAddresses: CustomerAddress[] = [];
 
 try {
   const response = await getCart(Astro.request.headers.get("cookie") || "");
   cartItems = response.data.items || [];
+} catch {
+  // Ignore errors
+}
+
+try {
+  const customerData = await getCustomerData(Astro.request.headers.get("cookie") || "");
+  savedAddresses = customerData.addresses || [];
 } catch {
   // Ignore errors
 }
@@ -27,6 +35,10 @@ const subtotal = cartItems.reduce((sum, item) => sum + (item.price?.price || 0) 
 const shipping = subtotal >= 100 ? 0 : 10;
 const tax = subtotal * 0.08;
 const total = subtotal + shipping + tax;
+
+// Find default addresses
+const defaultShippingAddress = savedAddresses.find(addr => addr.isDefaultShipping) || savedAddresses[0];
+const defaultBillingAddress = savedAddresses.find(addr => addr.isDefaultBilling) || savedAddresses[0];
 ---
 
 <Layout title="Checkout - usestore">
@@ -39,117 +51,382 @@ const total = subtotal + shipping + tax;
         <!-- Contact -->
         <section>
           <h2 class="text-lg font-medium mb-6">Contact</h2>
-          <div class="space-y-4">
-            <div>
-              <label for="email" class="text-sm font-medium">Email</label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={user?.email || ""}
-                placeholder="you@example.com"
-                required
-                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
+          <div>
+            <label for="email" class="text-sm font-medium">Email</label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              value={user?.email || ""}
+              placeholder="you@example.com"
+              required
+              class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
           </div>
         </section>
 
         <!-- Shipping Address -->
         <section>
           <h2 class="text-lg font-medium mb-6">Shipping Address</h2>
-          <div class="space-y-4">
+
+          {savedAddresses.length > 0 && (
+            <div class="space-y-3 mb-6">
+              <p class="text-sm font-medium text-muted-foreground">Select a saved address</p>
+              <div class="grid gap-3">
+                {savedAddresses.map((addr, index) => (
+                  <label
+                    class="shipping-address-option flex items-start gap-3 p-4 border cursor-pointer hover:border-primary/50 transition-colors"
+                    data-address-id={addr.id}
+                  >
+                    <input
+                      type="radio"
+                      name="shippingAddressId"
+                      value={addr.id}
+                      checked={defaultShippingAddress?.id === addr.id}
+                      class="mt-0.5 w-4 h-4 text-primary border-input focus:ring-primary"
+                      data-first-name={addr.recipientName?.split(" ")[0] || ""}
+                      data-last-name={addr.recipientName?.split(" ").slice(1).join(" ") || ""}
+                      data-phone={addr.recipientPhone || ""}
+                      data-address1={addr.address1}
+                      data-address2={addr.address2 || ""}
+                      data-city={addr.city}
+                      data-state={addr.state || ""}
+                      data-postal-code={addr.postalCode}
+                      data-country={addr.country}
+                    />
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium">
+                          {addr.label || `Address ${index + 1}`}
+                        </span>
+                        {addr.isDefaultShipping && (
+                          <span class="text-xs bg-primary/10 text-primary px-2 py-0.5">Default</span>
+                        )}
+                      </div>
+                      {addr.recipientName && (
+                        <p class="text-sm text-muted-foreground mt-1">{addr.recipientName}</p>
+                      )}
+                      <p class="text-sm text-muted-foreground">{addr.address1}</p>
+                      {addr.address2 && <p class="text-sm text-muted-foreground">{addr.address2}</p>}
+                      <p class="text-sm text-muted-foreground">
+                        {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.postalCode}
+                      </p>
+                      <p class="text-sm text-muted-foreground">{addr.country}</p>
+                    </div>
+                  </label>
+                ))}
+                <label class="shipping-address-option flex items-start gap-3 p-4 border cursor-pointer hover:border-primary/50 transition-colors">
+                  <input
+                    type="radio"
+                    name="shippingAddressId"
+                    value="new"
+                    class="mt-0.5 w-4 h-4 text-primary border-input focus:ring-primary"
+                  />
+                  <div class="flex-1">
+                    <span class="text-sm font-medium">Enter a new address</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div class="space-y-4 mb-4">
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
-                <label for="firstName" class="text-sm font-medium">First name</label>
+                <label for="shippingFirstName" class="text-sm font-medium">First name</label>
                 <input
-                  id="firstName"
-                  name="firstName"
+                  id="shippingFirstName"
+                  name="shippingFirstName"
                   type="text"
+                  value={defaultShippingAddress?.recipientName?.split(" ")[0] || ""}
                   required
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
               <div>
-                <label for="lastName" class="text-sm font-medium">Last name</label>
+                <label for="shippingLastName" class="text-sm font-medium">Last name</label>
                 <input
-                  id="lastName"
-                  name="lastName"
+                  id="shippingLastName"
+                  name="shippingLastName"
                   type="text"
+                  value={defaultShippingAddress?.recipientName?.split(" ").slice(1).join(" ") || ""}
                   required
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
             </div>
-            <div>
-              <label for="address1" class="text-sm font-medium">Address</label>
-              <input
-                id="address1"
-                name="address1"
-                type="text"
-                required
-                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <div>
-              <label for="address2" class="text-sm font-medium">Apartment, suite, etc. (optional)</label>
-              <input
-                id="address2"
-                name="address2"
-                type="text"
-                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <div class="grid sm:grid-cols-3 gap-4">
+          </div>
+
+          <div id="shipping-form-fields" class={savedAddresses.length > 0 ? "hidden" : ""}>
+            <div class="space-y-4">
               <div>
-                <label for="city" class="text-sm font-medium">City</label>
+                <label for="shippingAddress1" class="text-sm font-medium">Address</label>
                 <input
-                  id="city"
-                  name="city"
+                  id="shippingAddress1"
+                  name="shippingAddress1"
                   type="text"
-                  required
+                  value={defaultShippingAddress?.address1 || ""}
+                  required={savedAddresses.length === 0}
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
               <div>
-                <label for="state" class="text-sm font-medium">State</label>
+                <label for="shippingAddress2" class="text-sm font-medium">Apartment, suite, etc. (optional)</label>
                 <input
-                  id="state"
-                  name="state"
+                  id="shippingAddress2"
+                  name="shippingAddress2"
                   type="text"
+                  value={defaultShippingAddress?.address2 || ""}
+                  class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div class="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label for="shippingCity" class="text-sm font-medium">City</label>
+                  <input
+                    id="shippingCity"
+                    name="shippingCity"
+                    type="text"
+                    value={defaultShippingAddress?.city || ""}
+                    required={savedAddresses.length === 0}
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label for="shippingState" class="text-sm font-medium">State</label>
+                  <input
+                    id="shippingState"
+                    name="shippingState"
+                    type="text"
+                    value={defaultShippingAddress?.state || ""}
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label for="shippingPostalCode" class="text-sm font-medium">ZIP code</label>
+                  <input
+                    id="shippingPostalCode"
+                    name="shippingPostalCode"
+                    type="text"
+                    value={defaultShippingAddress?.postalCode || ""}
+                    required={savedAddresses.length === 0}
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <div>
+                <label for="shippingCountry" class="text-sm font-medium">Country</label>
+                <input
+                  id="shippingCountry"
+                  name="shippingCountry"
+                  type="text"
+                  value={defaultShippingAddress?.country || "US"}
+                  required={savedAddresses.length === 0}
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
               <div>
-                <label for="postalCode" class="text-sm font-medium">ZIP code</label>
+                <label for="shippingPhone" class="text-sm font-medium">Phone (optional)</label>
                 <input
-                  id="postalCode"
-                  name="postalCode"
-                  type="text"
-                  required
+                  id="shippingPhone"
+                  name="shippingPhone"
+                  type="tel"
+                  value={defaultShippingAddress?.recipientPhone || ""}
                   class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
             </div>
-            <div>
-              <label for="country" class="text-sm font-medium">Country</label>
+
+            <label class="flex items-center gap-2 mt-4 cursor-pointer">
               <input
-                id="country"
-                name="country"
-                type="text"
-                value="US"
-                required
-                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                type="checkbox"
+                id="saveShippingAddress"
+                name="saveShippingAddress"
+                class="w-4 h-4 text-primary border-input focus:ring-primary"
               />
+              <span class="text-sm">Save this address for future orders</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Billing Address -->
+        <section>
+          <h2 class="text-lg font-medium mb-6">Billing Address</h2>
+
+          <label class="flex items-center gap-2 mb-6 cursor-pointer">
+            <input
+              type="checkbox"
+              id="useDifferentBillingAddress"
+              name="useDifferentBillingAddress"
+              class="w-4 h-4 text-primary border-input focus:ring-primary"
+            />
+            <span class="text-sm">Use a different billing address</span>
+          </label>
+
+          <div id="billing-address-section" class="hidden">
+            {savedAddresses.length > 0 && (
+              <div class="space-y-3 mb-6">
+                <p class="text-sm font-medium text-muted-foreground">Select a saved address</p>
+                <div class="grid gap-3">
+                  {savedAddresses.map((addr, index) => (
+                    <label
+                      class="billing-address-option flex items-start gap-3 p-4 border cursor-pointer hover:border-primary/50 transition-colors"
+                      data-address-id={addr.id}
+                    >
+                      <input
+                        type="radio"
+                        name="billingAddressId"
+                        value={addr.id}
+                        checked={defaultBillingAddress?.id === addr.id}
+                        class="mt-0.5 w-4 h-4 text-primary border-input focus:ring-primary"
+                        data-first-name={addr.recipientName?.split(" ")[0] || ""}
+                        data-last-name={addr.recipientName?.split(" ").slice(1).join(" ") || ""}
+                        data-phone={addr.recipientPhone || ""}
+                        data-address1={addr.address1}
+                        data-address2={addr.address2 || ""}
+                        data-city={addr.city}
+                        data-state={addr.state || ""}
+                        data-postal-code={addr.postalCode}
+                        data-country={addr.country}
+                      >
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm font-medium">
+                            {addr.label || `Address ${index + 1}`}
+                          </span>
+                          {addr.isDefaultBilling && (
+                            <span class="text-xs bg-primary/10 text-primary px-2 py-0.5">Default</span>
+                          )}
+                        </div>
+                        {addr.recipientName && (
+                          <p class="text-sm text-muted-foreground mt-1">{addr.recipientName}</p>
+                        )}
+                        <p class="text-sm text-muted-foreground">{addr.address1}</p>
+                        {addr.address2 && <p class="text-sm text-muted-foreground">{addr.address2}</p>}
+                        <p class="text-sm text-muted-foreground">
+                          {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.postalCode}
+                        </p>
+                        <p class="text-sm text-muted-foreground">{addr.country}</p>
+                      </div>
+                    </label>
+                  ))}
+                  <label class="billing-address-option flex items-start gap-3 p-4 border cursor-pointer hover:border-primary/50 transition-colors">
+                    <input
+                      type="radio"
+                      name="billingAddressId"
+                      value="new"
+                      class="mt-0.5 w-4 h-4 text-primary border-input focus:ring-primary"
+                    />
+                    <div class="flex-1">
+                      <span class="text-sm font-medium">Enter a new address</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div class="space-y-4 mb-4">
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="billingFirstName" class="text-sm font-medium">First name</label>
+                  <input
+                    id="billingFirstName"
+                    name="billingFirstName"
+                    type="text"
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label for="billingLastName" class="text-sm font-medium">Last name</label>
+                  <input
+                    id="billingLastName"
+                    name="billingLastName"
+                    type="text"
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label for="phone" class="text-sm font-medium">Phone</label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+
+            <div id="billing-form-fields" class={savedAddresses.length > 0 ? "hidden" : ""}>
+              <div class="space-y-4">
+                <div>
+                  <label for="billingAddress1" class="text-sm font-medium">Address</label>
+                  <input
+                    id="billingAddress1"
+                    name="billingAddress1"
+                    type="text"
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label for="billingAddress2" class="text-sm font-medium">Apartment, suite, etc. (optional)</label>
+                  <input
+                    id="billingAddress2"
+                    name="billingAddress2"
+                    type="text"
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div class="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <label for="billingCity" class="text-sm font-medium">City</label>
+                    <input
+                      id="billingCity"
+                      name="billingCity"
+                      type="text"
+                      class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label for="billingState" class="text-sm font-medium">State</label>
+                    <input
+                      id="billingState"
+                      name="billingState"
+                      type="text"
+                      class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label for="billingPostalCode" class="text-sm font-medium">ZIP code</label>
+                    <input
+                      id="billingPostalCode"
+                      name="billingPostalCode"
+                      type="text"
+                      class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label for="billingCountry" class="text-sm font-medium">Country</label>
+                  <input
+                    id="billingCountry"
+                    name="billingCountry"
+                    type="text"
+                    value="US"
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label for="billingPhone" class="text-sm font-medium">Phone (optional)</label>
+                  <input
+                    id="billingPhone"
+                    name="billingPhone"
+                    type="tel"
+                    class="w-full mt-1.5 py-2.5 px-3 border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+              </div>
+
+              <label class="flex items-center gap-2 mt-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="saveBillingAddress"
+                  name="saveBillingAddress"
+                  class="w-4 h-4 text-primary border-input focus:ring-primary"
+                />
+                <span class="text-sm">Save this address for future orders</span>
+              </label>
             </div>
           </div>
         </section>
@@ -235,6 +512,14 @@ const total = subtotal + shipping + tax;
   </div>
 </Layout>
 
+<style>
+  input[type="radio"]:checked + div,
+  label:has(input[type="radio"]:checked) {
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--primary) / 0.02);
+  }
+</style>
+
 <script is:inline>
   const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:3000' : '';
 
@@ -242,6 +527,146 @@ const total = subtotal + shipping + tax;
   const submitBtn = document.getElementById('place-order-btn');
   const errorMsg = document.getElementById('error-message');
 
+  // Shipping address elements
+  const shippingFormFields = document.getElementById('shipping-form-fields');
+  const shippingRadios = document.querySelectorAll('input[name="shippingAddressId"]');
+
+  // Billing address elements
+  const useDifferentBilling = document.getElementById('useDifferentBillingAddress');
+  const billingSection = document.getElementById('billing-address-section');
+  const billingFormFields = document.getElementById('billing-form-fields');
+  const billingRadios = document.querySelectorAll('input[name="billingAddressId"]');
+
+  // Required fields for each address type (excluding firstName/lastName which are always visible)
+  const requiredShippingFields = ['shippingAddress1', 'shippingCity', 'shippingPostalCode', 'shippingCountry'];
+  const requiredBillingFields = ['billingAddress1', 'billingCity', 'billingPostalCode', 'billingCountry'];
+
+  // Helper to toggle required attribute on fields
+  function setFieldsRequired(fieldIds, required) {
+    fieldIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (required) {
+          el.setAttribute('required', '');
+        } else {
+          el.removeAttribute('required');
+        }
+      }
+    });
+  }
+
+  // Helper to fill address fields
+  function fillAddressFields(prefix, data) {
+    const fields = ['FirstName', 'LastName', 'Phone', 'Address1', 'Address2', 'City', 'State', 'PostalCode', 'Country'];
+    const dataKeys = ['firstName', 'lastName', 'phone', 'address1', 'address2', 'city', 'state', 'postalCode', 'country'];
+
+    fields.forEach((field, index) => {
+      const el = document.getElementById(`${prefix}${field}`);
+      if (el) {
+        el.value = data[dataKeys[index]] || (field === 'Country' ? 'US' : '');
+      }
+    });
+  }
+
+  // Helper to clear address fields
+  function clearAddressFields(prefix) {
+    fillAddressFields(prefix, {});
+  }
+
+  // Helper to get address data from radio button
+  function getAddressDataFromRadio(radio) {
+    return {
+      firstName: radio.dataset.firstName || '',
+      lastName: radio.dataset.lastName || '',
+      phone: radio.dataset.phone || '',
+      address1: radio.dataset.address1 || '',
+      address2: radio.dataset.address2 || '',
+      city: radio.dataset.city || '',
+      state: radio.dataset.state || '',
+      postalCode: radio.dataset.postalCode || '',
+      country: radio.dataset.country || 'US'
+    };
+  }
+
+  // Handle shipping address selection
+  shippingRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const selectedValue = e.target.value;
+
+      // Update visual selection
+      document.querySelectorAll('.shipping-address-option').forEach(label => {
+        label.classList.remove('border-primary', 'bg-primary/5');
+      });
+      e.target.closest('label').classList.add('border-primary', 'bg-primary/5');
+
+      if (selectedValue === 'new') {
+        shippingFormFields.classList.remove('hidden');
+        setFieldsRequired(requiredShippingFields, true);
+        clearAddressFields('shipping');
+      } else {
+        shippingFormFields.classList.add('hidden');
+        setFieldsRequired(requiredShippingFields, false);
+        const data = getAddressDataFromRadio(e.target);
+        fillAddressFields('shipping', data);
+      }
+    });
+  });
+
+  // Handle billing address toggle
+  useDifferentBilling.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      billingSection.classList.remove('hidden');
+      // Check if billing form fields are visible (no saved addresses or "new" selected)
+      const selectedBillingRadio = document.querySelector('input[name="billingAddressId"]:checked');
+      const showBillingForm = !selectedBillingRadio || selectedBillingRadio.value === 'new';
+      if (showBillingForm && !billingFormFields.classList.contains('hidden')) {
+        setFieldsRequired(requiredBillingFields, true);
+      }
+    } else {
+      billingSection.classList.add('hidden');
+      setFieldsRequired(requiredBillingFields, false);
+    }
+  });
+
+  // Handle billing address selection
+  billingRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const selectedValue = e.target.value;
+
+      // Update visual selection
+      document.querySelectorAll('.billing-address-option').forEach(label => {
+        label.classList.remove('border-primary', 'bg-primary/5');
+      });
+      e.target.closest('label').classList.add('border-primary', 'bg-primary/5');
+
+      if (selectedValue === 'new') {
+        billingFormFields.classList.remove('hidden');
+        setFieldsRequired(requiredBillingFields, true);
+        clearAddressFields('billing');
+      } else {
+        billingFormFields.classList.add('hidden');
+        setFieldsRequired(requiredBillingFields, false);
+        const data = getAddressDataFromRadio(e.target);
+        fillAddressFields('billing', data);
+      }
+    });
+  });
+
+  // Initialize visual selection for checked radios
+  document.querySelectorAll('input[name="shippingAddressId"]:checked, input[name="billingAddressId"]:checked').forEach(radio => {
+    radio.closest('label').classList.add('border-primary', 'bg-primary/5');
+  });
+
+  // Initialize required states on page load
+  const initialShippingRadio = document.querySelector('input[name="shippingAddressId"]:checked');
+  if (initialShippingRadio && initialShippingRadio.value !== 'new') {
+    // A saved address is selected, so form fields are hidden - remove required
+    setFieldsRequired(requiredShippingFields, false);
+  }
+  // Billing fields are always hidden initially (billing section is hidden)
+  setFieldsRequired(requiredBillingFields, false);
+
+  // Form submission
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
@@ -249,6 +674,71 @@ const total = subtotal + shipping + tax;
     errorMsg.classList.add('hidden');
 
     const formData = new FormData(form);
+    const useDifferentBillingAddress = formData.get('useDifferentBillingAddress') === 'on';
+
+    // Get shipping address - firstName/lastName always from form, rest from saved address or form
+    const selectedShippingRadio = document.querySelector('input[name="shippingAddressId"]:checked');
+    let shippingAddress;
+
+    if (selectedShippingRadio && selectedShippingRadio.value !== 'new') {
+      const savedData = getAddressDataFromRadio(selectedShippingRadio);
+      shippingAddress = {
+        firstName: formData.get('shippingFirstName'),
+        lastName: formData.get('shippingLastName'),
+        phone: savedData.phone || undefined,
+        address1: savedData.address1,
+        address2: savedData.address2 || undefined,
+        city: savedData.city,
+        state: savedData.state || undefined,
+        postalCode: savedData.postalCode,
+        country: savedData.country,
+      };
+    } else {
+      shippingAddress = {
+        firstName: formData.get('shippingFirstName'),
+        lastName: formData.get('shippingLastName'),
+        phone: formData.get('shippingPhone') || undefined,
+        address1: formData.get('shippingAddress1'),
+        address2: formData.get('shippingAddress2') || undefined,
+        city: formData.get('shippingCity'),
+        state: formData.get('shippingState') || undefined,
+        postalCode: formData.get('shippingPostalCode'),
+        country: formData.get('shippingCountry'),
+      };
+    }
+
+    // Get billing address if different - firstName/lastName always from form
+    let billingAddress;
+    if (useDifferentBillingAddress) {
+      const selectedBillingRadio = document.querySelector('input[name="billingAddressId"]:checked');
+
+      if (selectedBillingRadio && selectedBillingRadio.value !== 'new') {
+        const savedData = getAddressDataFromRadio(selectedBillingRadio);
+        billingAddress = {
+          firstName: formData.get('billingFirstName'),
+          lastName: formData.get('billingLastName'),
+          phone: savedData.phone || undefined,
+          address1: savedData.address1,
+          address2: savedData.address2 || undefined,
+          city: savedData.city,
+          state: savedData.state || undefined,
+          postalCode: savedData.postalCode,
+          country: savedData.country,
+        };
+      } else {
+        billingAddress = {
+          firstName: formData.get('billingFirstName'),
+          lastName: formData.get('billingLastName'),
+          phone: formData.get('billingPhone') || undefined,
+          address1: formData.get('billingAddress1'),
+          address2: formData.get('billingAddress2') || undefined,
+          city: formData.get('billingCity'),
+          state: formData.get('billingState') || undefined,
+          postalCode: formData.get('billingPostalCode'),
+          country: formData.get('billingCountry'),
+        };
+      }
+    }
 
     try {
       const response = await fetch(`${API_BASE}/api/checkout/`, {
@@ -256,17 +746,11 @@ const total = subtotal + shipping + tax;
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          shippingAddress: {
-            firstName: formData.get('firstName'),
-            lastName: formData.get('lastName'),
-            phone: formData.get('phone') || undefined,
-            address1: formData.get('address1'),
-            address2: formData.get('address2') || undefined,
-            city: formData.get('city'),
-            state: formData.get('state') || undefined,
-            postalCode: formData.get('postalCode'),
-            country: formData.get('country'),
-          },
+          shippingAddress,
+          billingAddress: useDifferentBillingAddress ? billingAddress : undefined,
+          useDifferentBillingAddress,
+          saveShippingAddress: formData.get('saveShippingAddress') === 'on',
+          saveBillingAddress: formData.get('saveBillingAddress') === 'on',
           customerNote: formData.get('customerNote') || undefined,
         })
       });

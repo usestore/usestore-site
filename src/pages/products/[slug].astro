@@ -157,7 +157,7 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
           >
             Add to Cart
           </button>
-          {user ? (
+          {user && !user.isAnonymous ? (
             <button
               class="w-full py-3 border border-input text-sm font-medium hover:bg-muted"
               data-product-id={product.id}
@@ -591,6 +591,7 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
 
 <script>
   import { authClient } from "@/lib/auth-client";
+  import { createReview } from "@/lib/api/reviews";
 
   const API_BASE = import.meta.env.PUBLIC_SERVER_URL || "";
 
@@ -619,7 +620,8 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
     if (session) return true;
 
     // Sign in anonymously
-    const { data: anonSession, error } = await authClient.signIn.anonymous();
+    const { data: anonSession, error } = await authClient.signIn.anonymous({});
+
     if (error || !anonSession) {
       console.error("Failed to create anonymous session:", error);
       return false;
@@ -716,6 +718,78 @@ const { data: reviews, total: totalReviews, averageRating } = reviewsData;
         addToWishlistBtn.textContent = originalText;
       } finally {
         addToWishlistBtn.disabled = false;
+      }
+    });
+  }
+
+  // Review Form Submission
+  const reviewForm = document.getElementById("review-form") as HTMLFormElement | null;
+  if (reviewForm) {
+    reviewForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const productId = reviewForm.dataset.productId;
+      const ratingInput = document.getElementById("rating") as HTMLInputElement | null;
+      const titleInput = document.getElementById("review-title") as HTMLInputElement | null;
+      const contentInput = document.getElementById("review-comment") as HTMLTextAreaElement | null;
+      const submitBtn = reviewForm.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+
+      const rating = parseInt(ratingInput?.value || "0", 10);
+      const title = titleInput?.value.trim() || undefined;
+      const content = contentInput?.value.trim() || undefined;
+
+      if (!productId) {
+        showNotification("Unable to submit review", "error");
+        return;
+      }
+
+      if (rating < 1 || rating > 5) {
+        showNotification("Please select a rating", "error");
+        return;
+      }
+
+      if (!content) {
+        showNotification("Please write a review", "error");
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+      }
+
+      try {
+        await createReview({
+          productId,
+          rating,
+          title,
+          content,
+        });
+
+        showNotification("Review submitted successfully!", "success");
+        // Reset form
+        reviewForm.reset();
+        if (ratingInput) ratingInput.value = "0";
+        // Reset star display
+        document.querySelectorAll(".rating-star").forEach((star) => {
+          const svg = star.querySelector("svg");
+          if (svg) {
+            svg.setAttribute("fill", "none");
+            star.classList.remove("text-foreground");
+            star.classList.add("text-muted-foreground");
+          }
+        });
+        // Reload page to show new review
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        console.error("Failed to submit review:", err);
+        const message = err instanceof Error ? err.message : "Failed to submit review. Please try again.";
+        showNotification(message, "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit Review";
+        }
       }
     });
   }
